@@ -178,7 +178,7 @@ http://localhost:8080/emails/{id}
 ```
 
 > **Importante:** O arquivo `credentials.json` e a pasta `data/` não fazem parte do repositório por questões de segurança.
-## Autor
+## Autora
 
 Desenvolvido por **Samara Silva**.
 
