@@ -4,12 +4,17 @@ import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
 import com.samara.emailsummary.dto.EmailDetalheDTO;
+import com.samara.emailsummary.dto.EmailResumoDTO;
+import com.samara.emailsummary.dto.AttachmentMetadataDTO;
+import com.samara.emailsummary.attachment.service.AttachmentProcessingService;
+import com.samara.emailsummary.attachment.service.AttachmentValidationService;
+import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
 
-import com.samara.emailsummary.dto.EmailResumoDTO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -18,9 +23,15 @@ import java.util.Base64;
 public class GmailProvider implements EmailProvider {
 
     private final Gmail gmail;
+    private final AttachmentValidationService attachmentValidationService;
+    private final AttachmentProcessingService attachmentProcessingService;
 
-    public GmailProvider(Gmail gmail) {
+    public GmailProvider(Gmail gmail,
+                         AttachmentValidationService attachmentValidationService,
+                         AttachmentProcessingService attachmentProcessingService) {
         this.gmail = gmail;
+        this.attachmentValidationService = attachmentValidationService;
+        this.attachmentProcessingService = attachmentProcessingService;
     }
 
     @Override
@@ -135,6 +146,42 @@ public class GmailProvider implements EmailProvider {
                 .anyMatch(part -> part.getFilename() != null && !part.getFilename().isBlank());
     }
 
+    private List<AttachmentMetadataDTO> extrairAnexos(MessagePart payload) {
+
+        List<AttachmentMetadataDTO> anexos = new ArrayList<>();
+
+        if (payload == null || payload.getParts() == null) {
+            return anexos;
+        }
+
+        for (MessagePart part : payload.getParts()) {
+
+            String nomeArquivo = part.getFilename();
+
+            if (nomeArquivo != null && !nomeArquivo.isBlank()) {
+
+                String attachmentId = part.getBody() != null
+                        ? part.getBody().getAttachmentId()
+                        : null;
+
+                Long tamanho = part.getBody() != null && part.getBody().getSize() != null
+                        ? part.getBody().getSize().longValue()
+                        : 0L;
+
+                AttachmentMetadataDTO anexo = new AttachmentMetadataDTO(
+                        nomeArquivo,
+                        part.getMimeType(),
+                        tamanho,
+                        attachmentId
+                );
+
+                anexos.add(anexo);
+            }
+        }
+
+        return anexos;
+    }
+
     private String extrairCorpoTexto(Message mensagem) {
         if (mensagem.getPayload() == null) {
             return "";
@@ -179,6 +226,10 @@ public class GmailProvider implements EmailProvider {
 
             boolean temAnexo = possuiAnexo(mensagemCompleta);
 
+            List<AttachmentMetadataDTO> anexos = extrairAnexos(mensagemCompleta.getPayload());
+
+            String textoDosAnexos = extrairTextoDosAnexos(id, anexos);
+
             EmailDetalheDTO email = new EmailDetalheDTO();
 
             email.setId(id);
@@ -186,7 +237,8 @@ public class GmailProvider implements EmailProvider {
             email.setAssunto(assunto);
             email.setData(dataFormatada);
             email.setTemAnexo(temAnexo);
-            email.setCorpo(corpo);
+            email.setCorpo(juntarConteudo(corpo, textoDosAnexos));
+            email.setAnexos(anexos);
 
             return email;
 
@@ -232,4 +284,76 @@ public class GmailProvider implements EmailProvider {
 
         return corpoLimpo;
     }
+
+    private byte[] baixarAnexo(String mensagemId, String attachmentId) {
+        try {
+            MessagePartBody anexo = gmail.users()
+                    .messages()
+                    .attachments()
+                    .get("me", mensagemId, attachmentId)
+                    .execute();
+
+            return Base64.getUrlDecoder().decode(anexo.getData());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao baixar anexo do Gmail", e);
+        }
+    }
+
+    private String extrairTextoDosAnexos(String mensagemId, List<AttachmentMetadataDTO> anexos) {
+
+        if (anexos == null || anexos.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder textoDosAnexos = new StringBuilder();
+
+        for (AttachmentMetadataDTO anexo : anexos) {
+            textoDosAnexos.append(processarAnexo(mensagemId, anexo));
+        }
+
+        return textoDosAnexos.toString().trim();
+    }
+
+    private String processarAnexo(String mensagemId, AttachmentMetadataDTO anexo) {
+
+        try {
+            attachmentValidationService.validar(anexo);
+
+            byte[] arquivo = baixarAnexo(mensagemId, anexo.getAttachmentId());
+
+            String textoExtraido = attachmentProcessingService.extrairTexto(
+                    anexo.getMimeType(),
+                    arquivo
+            );
+
+            if (textoExtraido == null || textoExtraido.isBlank()) {
+                return "";
+            }
+
+            return "\n\n--- Anexo: "
+                    + anexo.getNomeArquivo()
+                    + " ---\n"
+                    + textoExtraido;
+
+        } catch (Exception e) {
+
+            return "\n\n--- Anexo ignorado: "
+                    + anexo.getNomeArquivo()
+                    + " ---\nMotivo: "
+                    + e.getMessage();
+        }
+    }
+
+    private String juntarConteudo(String corpo, String textoDosAnexos) {
+
+        if (textoDosAnexos == null || textoDosAnexos.isBlank()) {
+            return corpo;
+        }
+
+        return corpo +
+                "\n\n==================== ANEXOS ====================\n\n" +
+                textoDosAnexos;
+    }
+
 }

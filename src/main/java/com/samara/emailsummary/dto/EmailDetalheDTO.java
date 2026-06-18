@@ -1,5 +1,7 @@
 package com.samara.emailsummary.dto;
 
+import java.util.List;
+
 public class EmailDetalheDTO {
 
     private String id;
@@ -8,6 +10,7 @@ public class EmailDetalheDTO {
     private String corpo;
     private String data;
     private boolean temAnexo;
+    private List<AttachmentMetadataDTO> anexos;
 
     public String getId() {
         return id;
@@ -55,5 +58,13 @@ public class EmailDetalheDTO {
 
     public void setTemAnexo(boolean temAnexo) {
         this.temAnexo = temAnexo;
+    }
+
+    public List<AttachmentMetadataDTO> getAnexos() {
+        return anexos;
+    }
+
+    public void setAnexos(List<AttachmentMetadataDTO> anexos) {
+        this.anexos = anexos;
     }
 }
