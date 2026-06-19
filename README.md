@@ -329,6 +329,7 @@ A segurança foi considerada desde o início do desenvolvimento do projeto.
 * Dependency Injection
 * Variáveis de ambiente para informações sensíveis
 
+
 ## 🚀 Como executar o projeto
 
 ### Pré-requisitos
@@ -398,6 +399,52 @@ EmailSummaryApplication
 | GET    | `/emails/{id}`        | Retorna os detalhes completos de um e-mail        |
 | GET    | `/emails/{id}/resumo` | Gera um resumo utilizando Inteligência Artificial |
 
+## 🗺️ Roadmap
+
+### ✅ Concluído
+
+* [x] Estrutura inicial do projeto com Spring Boot
+* [x] Arquitetura em camadas
+* [x] Integração com Gmail API
+* [x] Autenticação OAuth 2.0
+* [x] Leitura de e-mails
+* [x] Consulta de e-mails por ID
+* [x] Extração de remetente, assunto, data e corpo
+* [x] Processamento de anexos (PDF, DOCX e TXT)
+* [x] Limpeza inteligente do corpo dos e-mails
+* [x] Arquitetura para provedores de e-mail
+* [x] Integração com Google Gemini
+* [x] Construção dinâmica de prompts
+* [x] Geração automática de resumo executivo
+* [x] Classificação automática de prioridade
+* [x] Identificação de pendências, prazos e ações sugeridas
+* [x] Desserialização automática da resposta da IA
+* [x] Tratamento seguro de credenciais
+* [x] API REST para consulta dos resumos
+
+---
+
+### 🚧 Em desenvolvimento
+
+* [ ] Refatoração da integração com IA
+* [ ] Parser dedicado para respostas do Gemini
+* [ ] Melhoria do tratamento de exceções
+* [ ] Ampliação da cobertura de testes unitários
+
+---
+
+### 📌 Próximas funcionalidades
+
+* [ ] Suporte ao Microsoft Outlook
+* [ ] Dashboard para consulta dos resumos
+* [ ] Histórico de resumos gerados
+* [ ] Filtros por prioridade
+* [ ] Envio automático de resumos por e-mail
+* [ ] Versão Desktop
+* [ ] Execução agendada (Scheduler)
+* [ ] Geração de relatórios executivos
+* [ ] Suporte a novos provedores de IA
+* [ ] Testes de integração
 
 
 Desenvolvido por **Samara Silva**.
