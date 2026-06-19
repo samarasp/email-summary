@@ -7,178 +7,398 @@
 
 ## Sobre o projeto
 
-O Email Summary é uma aplicação desenvolvida em Java com Spring Boot para leitura de e-mails utilizando a API do Gmail.
+O Email Summary é uma aplicação backend desenvolvida para automatizar a leitura de e-mails corporativos, extrair informações relevantes e gerar resumos executivos utilizando Inteligência Artificial.
 
-O objetivo do projeto é automatizar a obtenção de mensagens, preparar seu conteúdo para processamento por Inteligência Artificial e, futuramente, gerar resumos executivos, processar anexos, emitir relatórios e integrar diferentes provedores de e-mail.
+A aplicação integra-se à Gmail API através de OAuth 2.0, processa o conteúdo das mensagens e de seus anexos e utiliza o Google Gemini para produzir análises estruturadas, incluindo resumo, prioridade, pendências, ações sugeridas e necessidade de resposta.
 
-O projeto foi desenvolvido priorizando arquitetura em camadas, baixo acoplamento, reutilização de código e segurança no tratamento das credenciais de autenticação.
+Desde o início do desenvolvimento, o projeto foi construído priorizando:
 
-## Funcionalidades implementadas
+Arquitetura em camadas
+Baixo acoplamento
+Princípios SOLID
+Responsabilidade Única (SRP)
+Segurança das credenciais
+Facilidade de manutenção e evolução
+Preparação para múltiplos provedores de e-mail (Gmail e Outlook)
 
-Atualmente o projeto é capaz de:
+## ✨ Funcionalidades
 
-- Autenticar de forma segura utilizando OAuth 2.0 do Google.
-- Ler e-mails da conta Gmail utilizando a Gmail API.
-- Identificar a presença de anexos nas mensagens.
-- Listar os e-mails mais recentes.
-- Consultar os detalhes completos de um e-mail pelo ID.
-- Extrair remetente, assunto, data, corpo da mensagem e indicação de anexos.
-- Realizar uma limpeza inicial do corpo do e-mail, removendo trechos de histórico e encaminhamentos para preparar o texto para processamento por Inteligência Artificial (IA).
-- Utilizar uma arquitetura baseada em camadas, facilitando manutenção e evolução do sistema.
+Atualmente a aplicação é capaz de:
 
-## Arquitetura
+### 📧 Leitura de e-mails
 
-O projeto foi desenvolvido seguindo uma arquitetura em camadas, onde cada componente possui uma responsabilidade bem definida.
+* ✅ Autenticação segura utilizando OAuth 2.0 do Google
+* ✅ Integração com a Gmail API
+* ✅ Listagem dos e-mails mais recentes
+* ✅ Consulta detalhada de um e-mail pelo ID
+* ✅ Extração de:
 
-```
-Controller
-        ↓
-Service
-        ↓
+  * remetente
+  * assunto
+  * data
+  * corpo da mensagem
+  * indicação de anexos
+
+### 📎 Processamento de anexos
+
+* ✅ Leitura de arquivos PDF
+* ✅ Leitura de documentos DOCX
+* ✅ Leitura de arquivos TXT
+* ✅ Validação de tipo, tamanho e nome do arquivo
+* ✅ Incorporação automática do conteúdo dos anexos ao texto do e-mail
+
+### 🧹 Preparação do conteúdo
+
+* ✅ Remoção de assinaturas
+* ✅ Remoção de históricos de conversas
+* ✅ Remoção de encaminhamentos
+* ✅ Normalização do texto para processamento por IA
+
+### 🤖 Inteligência Artificial
+
+* ✅ Integração com Google Gemini
+* ✅ Construção dinâmica de prompts
+* ✅ Geração automática de resumo executivo
+* ✅ Classificação automática de prioridade
+* ✅ Identificação de:
+
+  * ações sugeridas
+  * pendências
+  * prazos
+  * pessoas citadas
+  * necessidade de resposta
+* ✅ Geração de sugestão de resposta quando necessário
+* ✅ Conversão automática da resposta da IA para objetos Java utilizando Jackson (`ObjectMapper`)
+
+### 🌐 API REST
+
+Endpoints disponíveis:
+
+* `GET /emails`
+* `GET /emails/{id}`
+* `GET /emails/{id}/resumo`
+
+
+## 🏗️ Arquitetura
+
+O projeto foi desenvolvido seguindo uma arquitetura em camadas, com responsabilidades bem definidas e baixo acoplamento entre os componentes.
+
+### Fluxo da aplicação
+
+```text
+Cliente HTTP
+      │
+      ▼
+EmailController
+      │
+      ▼
+EmailService
+      │
+      ▼
 EmailProvider
-        ↓
+      │
+      ▼
 GmailProvider
-        ↓
-GmailConfig
-        ↓
-GoogleAuthorizationService
-        ↓
+      │
+      ▼
 Gmail API
 ```
 
-### Responsabilidades
+### Fluxo da Inteligência Artificial
 
-- **Controller:** recebe as requisições HTTP.
-- **Service:** coordena o fluxo da aplicação e aplica as regras de negócio.
-- **EmailProvider:** define o contrato para provedores de e-mail.
-- **GmailProvider:** implementa a integração com a Gmail API.
-- **DTOs:** transportam os dados entre as camadas.
-- **GoogleAuthorizationService:** realiza a autenticação OAuth 2.0.
-- **GmailConfig:** configura e disponibiliza o cliente da Gmail API através de injeção de dependência.
-
-## Tecnologias
-
-- Java 21
-- Spring Boot 3.5.15
-- Maven
-- REST API
-- Gmail API
-- Google OAuth 2.0
-- IntelliJ IDEA
-- Git
-- GitHub
-
-## Estrutura do projeto
-
-```
-src/main/java/com/samara/emailsummary
-
-├── config
-│   └── GmailConfig
-│
-├── controller
-│   ├── EmailController
-│   └── HelloController
-│
-├── dto
-│   ├── EmailDetalheDTO
-│   └── EmailResumoDTO
-│
-├── provider
-│   ├── EmailProvider
-│   └── GmailProvider
-│
-├── security
-│   └── oauth
-│       └── GoogleAuthorizationService
-│
-├── service
-│   ├── EmailService
-│   └── HelloService
-│
-└── EmailSummaryApplication
+```text
+EmailController
+        │
+        ▼
+SummaryService
+        │
+        ├──────────────┐
+        ▼              ▼
+PromptBuilder     AiProvider
+Service                │
+                       ▼
+                 GeminiProvider
+                       │
+                       ▼
+                 GeminiClient
+                       │
+                       ▼
+                 Google Gemini
+                       │
+                       ▼
+               SummaryResponse
 ```
 
-## Segurança
+### Processamento de anexos
+
+```text
+AttachmentValidationService
+              │
+              ▼
+AttachmentProcessingService
+              │
+              ▼
+AttachmentReader
+      ├─────────────┬─────────────┐
+      ▼             ▼             ▼
+PdfReader      DocxReader     TextReader
+```
+
+## Responsabilidades
+
+| Componente                    | Responsabilidade                                   |
+| ----------------------------- | -------------------------------------------------- |
+| `Controller`                  | Recebe as requisições HTTP                         |
+| `Service`                     | Coordena o fluxo da aplicação                      |
+| `Provider`                    | Define contratos para integrações externas         |
+| `GmailProvider`               | Implementa a integração com a Gmail API            |
+| `GeminiProvider`              | Implementa a integração com o Google Gemini        |
+| `GeminiClient`                | Realiza a comunicação HTTP com a API do Gemini     |
+| `PromptBuilderService`        | Constrói prompts para a IA                         |
+| `AttachmentProcessingService` | Processa os anexos                                 |
+| `AttachmentReader`            | Define o contrato para leitura de anexos           |
+| `DTOs`                        | Transportam dados entre as camadas                 |
+| `Config`                      | Centraliza configurações e injeção de dependências |
+
+### Princípios adotados
+
+* ✅ SOLID
+* ✅ Single Responsibility Principle (SRP)
+* ✅ Baixo acoplamento
+* ✅ Separação de responsabilidades
+* ✅ Injeção de dependência
+* ✅ Arquitetura extensível para novos provedores
+
+
+## 🛠️ Tecnologias
+
+### Linguagem e Framework
+
+* Java 21
+* Spring Boot 3.5.x
+* Maven
+
+### APIs e Integrações
+
+* Gmail API
+* Google OAuth 2.0
+* Google Gemini API
+
+### Processamento de Arquivos
+
+* Apache PDFBox (PDF)
+* Apache POI (DOCX)
+* Java Nativo (TXT)
+
+### Serialização
+
+* Jackson (`ObjectMapper`)
+
+### Comunicação HTTP
+
+* Java HttpClient
+
+### Desenvolvimento
+
+* IntelliJ IDEA
+* Git
+* GitHub
+
+### Arquitetura
+
+* REST API
+* DTO Pattern
+* Provider Pattern
+* Dependency Injection
+* SOLID
+* Single Responsibility Principle (SRP)
+
+
+## 📁 Estrutura do Projeto
+
+```text
+src
+└── main
+    ├── java
+    │   └── com
+    │       └── samara
+    │           └── emailsummary
+    │
+    ├── ai
+    │   ├── client
+    │   │   └── GeminiClient
+    │   │
+    │   ├── dto
+    │   │   ├── Candidate
+    │   │   ├── Content
+    │   │   ├── GeminiRequest
+    │   │   ├── GeminiResponse
+    │   │   ├── Part
+    │   │   ├── SummaryRequest
+    │   │   └── SummaryResponse
+    │   │
+    │   ├── provider
+    │   │   ├── AiProvider
+    │   │   └── GeminiProvider
+    │   │
+    │   └── service
+    │       ├── PromptBuilderService
+    │       └── SummaryService
+    │
+    ├── attachment
+    │   ├── reader
+    │   │   ├── AttachmentReader
+    │   │   ├── PdfAttachmentReader
+    │   │   ├── DocxAttachmentReader
+    │   │   └── TextAttachmentReader
+    │   │
+    │   └── service
+    │       ├── AttachmentProcessingService
+    │       └── AttachmentValidationService
+    │
+    ├── config
+    │   ├── AiProperties
+    │   ├── GeminiConfig
+    │   └── GmailConfig
+    │
+    ├── controller
+    │   ├── EmailController
+    │   └── HelloController
+    │
+    ├── dto
+    │   ├── EmailDetalheDTO
+    │   └── EmailResumoDTO
+    │
+    ├── provider
+    │   ├── EmailProvider
+    │   └── GmailProvider
+    │
+    ├── security
+    │   └── oauth
+    │       └── GoogleAuthorizationService
+    │
+    ├── service
+    │   ├── EmailService
+    │   └── HelloService
+    │
+    └── EmailSummaryApplication
+```
+
+
+## 🔐 Segurança
 
 A segurança foi considerada desde o início do desenvolvimento do projeto.
 
-As principais práticas adotadas incluem:
+### Autenticação
 
-- Utilização do OAuth 2.0 para autenticação com a conta Google.
-- Utilização de injeção de dependência para desacoplar a configuração da Gmail API.
-- Uso do escopo `GMAIL_READONLY`, seguindo o princípio do menor privilégio (Least Privilege).
-- Separação entre autenticação, configuração e regra de negócio.
-- Credenciais OAuth (`credentials.json`) não versionadas no Git.
-- Tokens de autenticação armazenados fora do repositório.
-- Arquivos sensíveis protegidos através do `.gitignore`.
-- Arquitetura preparada para facilitar manutenção, auditoria e evolução do sistema.
+* ✅ OAuth 2.0 com a Google Gmail API
+* ✅ Escopo `GMAIL_READONLY`, seguindo o princípio do menor privilégio (Least Privilege)
+* ✅ Tokens armazenados fora do repositório
 
-## Roadmap
+### Proteção de credenciais
 
-Próximas funcionalidades previstas:
+* ✅ `credentials.json` não versionado
+* ✅ API Key do Google Gemini armazenada em variável de ambiente
+* ✅ Arquivos sensíveis protegidos pelo `.gitignore`
+* ✅ Nenhum segredo armazenado no código-fonte
 
-- [ ] Processamento seguro de anexos.
-- [ ] Integração com o Google Gemini para geração de resumos.
-- [ ] Geração de relatórios executivos.
-- [ ] Envio automático de relatórios.
-- [ ] Suporte ao Microsoft Outlook.
-- [ ] Testes unitários.
-- [ ] Testes de integração.
+### Tratamento seguro de erros
 
-## Como executar
+* ✅ Exceções internas registradas em log
+* ✅ Mensagens genéricas retornadas ao cliente
+* ✅ Nenhuma exposição de:
+
+  * API Keys
+  * OAuth Tokens
+  * URLs sensíveis
+  * Credenciais
+
+### Arquitetura
+
+* ✅ Separação entre configuração, autenticação e regra de negócio
+* ✅ Baixo acoplamento entre os módulos
+* ✅ Configuração centralizada através de injeção de dependência
+* ✅ Estrutura preparada para suportar novos provedores de e-mail e IA
+
+### Boas práticas adotadas
+
+* Princípios SOLID
+* Single Responsibility Principle (SRP)
+* DTO Pattern
+* Provider Pattern
+* Dependency Injection
+* Variáveis de ambiente para informações sensíveis
+
+## 🚀 Como executar o projeto
 
 ### Pré-requisitos
 
-- Java 21
-- Maven 3.9+
-- Conta Google com a Gmail API habilitada
-- Credenciais OAuth 2.0
+* Java 21
+* Maven 3.9+
+* Conta Google com acesso à Gmail API
+* Projeto criado no Google Cloud Console
+* Credenciais OAuth 2.0
+* Chave de API do Google Gemini
 
-### Passos
-
-Clone este repositório.
-
-Configure o arquivo `credentials.json` no diretório:
-
-```text
-src/main/resources/google/
-```
-
-Execute a aplicação:
+### 1. Clone o repositório
 
 ```bash
-./mvnw spring-boot:run
+git clone https://github.com/samarasp/email-summary.git
 ```
 
-ou
+```bash
+cd email-summary
+```
+
+### 2. Configure as credenciais OAuth
+
+Coloque o arquivo `credentials.json` no local esperado pela aplicação.
+
+> **Importante:** esse arquivo não é versionado e deve permanecer fora do Git.
+
+### 3. Configure a variável de ambiente
+
+Windows (PowerShell):
+
+```powershell
+setx GEMINI_API_KEY "SUA_API_KEY"
+```
+
+Após executar o comando, feche e abra novamente o terminal.
+
+### 4. Configure o `application.properties`
+
+A aplicação utiliza:
+
+```properties
+email.summary.ai.enabled=true
+email.summary.ai.provider=gemini
+
+gemini.api.key=${GEMINI_API_KEY}
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+```
+
+### 5. Execute a aplicação
 
 ```bash
 mvn spring-boot:run
 ```
 
-Na primeira execução será aberta uma janela do navegador para autorização da conta Google.
-
-Após a autorização, os tokens serão armazenados localmente em:
+Ou execute a classe:
 
 ```text
-data/
+EmailSummaryApplication
 ```
 
-A aplicação estará disponível em:
+### 6. Endpoints disponíveis
 
-```text
-http://localhost:8080/emails
-```
+| Método | Endpoint              | Descrição                                         |
+| ------ | --------------------- | ------------------------------------------------- |
+| GET    | `/emails`             | Lista os e-mails mais recentes                    |
+| GET    | `/emails/{id}`        | Retorna os detalhes completos de um e-mail        |
+| GET    | `/emails/{id}/resumo` | Gera um resumo utilizando Inteligência Artificial |
 
-Para consultar um e-mail específico:
 
-```text
-http://localhost:8080/emails/{id}
-```
-
-> **Importante:** O arquivo `credentials.json` e a pasta `data/` não fazem parte do repositório por questões de segurança.
-## Autora
 
 Desenvolvido por **Samara Silva**.
 
