@@ -1,13 +1,15 @@
 package com.samara.emailsummary.ai.provider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.samara.emailsummary.ai.client.GeminiClient;
 import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
+import com.samara.emailsummary.ai.parser.GeminiResponseParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.List;
 
 @Component
@@ -16,53 +18,56 @@ public class GeminiProvider implements AiProvider {
     private static final Logger log = LoggerFactory.getLogger(GeminiProvider.class);
 
     private final GeminiClient geminiClient;
-    private final ObjectMapper objectMapper;
+    private final GeminiResponseParser responseParser;
 
-    public GeminiProvider(GeminiClient geminiClient, ObjectMapper objectMapper) {
+    public GeminiProvider(
+            GeminiClient geminiClient,
+            GeminiResponseParser responseParser
+    ) {
         this.geminiClient = geminiClient;
-        this.objectMapper = objectMapper;
+        this.responseParser = responseParser;
     }
 
     @Override
     public SummaryResponse gerarResumo(SummaryRequest request) {
 
         try {
+            log.info("Iniciando geração de resumo com Gemini.");
+
             String respostaBruta = geminiClient.gerarConteudo(request.conteudo());
 
-            String respostaLimpa = limparJson(respostaBruta);
+            SummaryResponse resumo = responseParser.parse(respostaBruta);
 
-            return objectMapper.readValue(
-                    respostaLimpa,
-                    SummaryResponse.class
-            );
+            log.info("Resumo gerado com sucesso pelo Gemini.");
 
-        } catch (Exception e) {
+            return resumo;
 
-            log.error("Falha ao gerar resumo com Gemini.", e);
+        } catch (JsonProcessingException e) {
+            log.error("Falha ao interpretar a resposta do Gemini.", e);
+            return respostaErro();
 
-            return new SummaryResponse(
-                    "Erro ao comunicar com o serviço de IA.",
-                    "Não classificada",
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    List.of(),
-                    false,
-                    "",
-                    "Baixa"
-            );
+        } catch (IOException e) {
+            log.error("Erro de comunicação com o Gemini.", e);
+            return respostaErro();
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Comunicação com o Gemini interrompida.", e);
+            return respostaErro();
         }
     }
 
-    private String limparJson(String resposta) {
-        if (resposta == null) {
-            return "";
-        }
-
-        return resposta
-                .replace("```json", "")
-                .replace("```", "")
-                .trim();
+    private SummaryResponse respostaErro() {
+        return new SummaryResponse(
+                "Erro ao comunicar com o serviço de IA.",
+                "Não classificada",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                false,
+                "",
+                "Baixa"
+        );
     }
-
 }

@@ -35,12 +35,14 @@ public class GeminiClient {
 
     public String gerarConteudo(String prompt) throws IOException, InterruptedException {
 
-        log.info("Iniciando chamada ao Gemini.");
-
         if (!aiProperties.isEnabled()) {
-            log.info("IA desativada.");
+            log.info("IA desativada nas configurações.");
             return "IA desativada nas configurações.";
         }
+
+        long inicio = System.currentTimeMillis();
+
+        log.info("Iniciando chamada ao Gemini.");
 
         GeminiRequest geminiRequest = new GeminiRequest(prompt);
 
@@ -54,21 +56,27 @@ public class GeminiClient {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        log.info("Requisição HTTP criada.");
-
         HttpResponse<String> response = httpClient.send(
                 request,
                 HttpResponse.BodyHandlers.ofString()
         );
 
-        log.info("Resposta recebida. Status HTTP: {}", response.statusCode());
+        long duracaoMs = System.currentTimeMillis() - inicio;
+
+        log.info(
+                "Resposta recebida do Gemini. Status HTTP: {}. Tempo: {} ms.",
+                response.statusCode(),
+                duracaoMs
+        );
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
-            log.warn("Falha na chamada ao Gemini. Status HTTP: {}", response.statusCode());
+            log.warn(
+                    "Falha na chamada ao Gemini. Status HTTP: {}. Tempo: {} ms.",
+                    response.statusCode(),
+                    duracaoMs
+            );
             throw new IOException("Erro ao chamar Gemini.");
         }
-
-        log.info("Resposta recebida com sucesso.");
 
         GeminiResponse geminiResponse = objectMapper.readValue(
                 response.body(),

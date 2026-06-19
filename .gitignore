@@ -37,3 +37,15 @@ src/main/resources/google/credentials.json
 
 ### Runtime data (tokens, logs, cache, reports, temp) ###
 data/
+
+# Environment variables
+.env
+.env.*
+
+# Logs
+*.log
+logs/
+
+# Operating System
+.DS_Store
+Thumbs.db
