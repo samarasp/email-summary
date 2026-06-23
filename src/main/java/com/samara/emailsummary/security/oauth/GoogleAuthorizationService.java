@@ -68,7 +68,7 @@ public class GoogleAuthorizationService {
                 .build();
 
         return new AuthorizationCodeInstalledApp(flow, receiver)
-                .authorize("diretoria@sbot.org.br");
+                .authorize("user");
     }
 
     public Credential authorize() throws Exception {
