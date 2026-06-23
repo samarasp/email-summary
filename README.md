@@ -7,9 +7,13 @@
 
 ## Sobre o projeto
 
-O **Email Summary** é uma aplicação backend desenvolvida em **Java 21** e **Spring Boot** para automatizar a leitura de e-mails corporativos e gerar resumos executivos utilizando Inteligência Artificial.
+O **Email Summary** é uma aplicação backend desenvolvida em **Java 21** e **Spring Boot** que automatiza o processamento de e-mails corporativos utilizando Inteligência Artificial.
 
-A aplicação integra-se à **Gmail API** por meio de **OAuth 2.0**, processa o conteúdo das mensagens e de seus anexos e utiliza o **Google Gemini** para produzir análises estruturadas, incluindo resumo, prioridade, pendências, ações sugeridas, prazos, pessoas citadas, necessidade de resposta e sugestão de resposta.
+A solução integra-se à **Gmail API** por meio de **OAuth 2.0**, realiza a leitura segura das mensagens, processa automaticamente seus anexos e utiliza o **Google Gemini** para transformar o conteúdo dos e-mails em informações estruturadas e acionáveis.
+
+Além da geração de resumos executivos, a aplicação é capaz de identificar prioridades, destacar pendências, sugerir ações, detectar a necessidade de resposta, elaborar sugestões de resposta e consolidar essas informações em um **Daily Briefing**, permitindo uma visão rápida dos principais assuntos recebidos.
+
+O sistema também pode enviar automaticamente os resumos gerados por e-mail utilizando a própria Gmail API, criando um fluxo completo de automação para acompanhamento de mensagens corporativas.
 
 Desde o início do desenvolvimento, o projeto foi concebido com foco em:
 
@@ -19,9 +23,38 @@ Desde o início do desenvolvimento, o projeto foi concebido com foco em:
 * Responsabilidade Única (SRP);
 * Segurança no gerenciamento de credenciais;
 * Facilidade de manutenção e evolução;
-* Preparação para suportar múltiplos provedores de e-mail, como Gmail e Outlook.
+* Componentes reutilizáveis;
+* Preparação para suportar múltiplos provedores de e-mail e de Inteligência Artificial.
 
 ---
+
+## 🔄 Fluxo da Aplicação
+
+```text
+                 Gmail API
+                     │
+                     ▼
+           Leitura dos e-mails
+                     │
+                     ▼
+          Pré-processamento do texto
+                     │
+                     ▼
+        Processamento de anexos (PDF/DOCX/TXT)
+                     │
+                     ▼
+              Google Gemini
+                     │
+                     ▼
+          SummaryResponse estruturado
+                     │
+          ┌──────────┴──────────┐
+          ▼                     ▼
+Resumo formatado         Daily Briefing
+          │
+          ▼
+Envio automático por e-mail
+```
 
 # ✨ Funcionalidades
 
@@ -76,11 +109,36 @@ A resposta é retornada em formato JSON e convertida automaticamente para objeto
 
 ## 🌐 API REST
 
-Atualmente, a API disponibiliza os seguintes endpoints:
+Atualmente, a aplicação disponibiliza os seguintes recursos por meio de uma API REST:
 
-* `GET /emails`
-* `GET /emails/{id}`
-* `GET /emails/{id}/resumo`
+### 📧 Gerenciamento de e-mails
+
+* ✅ Listagem dos e-mails mais recentes;
+* ✅ Consulta detalhada de um e-mail específico;
+* ✅ Geração de resumo executivo utilizando Inteligência Artificial.
+
+### ✉️ Envio automático de resumos
+
+Após gerar o resumo com o Google Gemini, a aplicação pode enviá-lo automaticamente por e-mail utilizando a Gmail API.
+
+### 📋 Daily Briefing
+
+Além dos resumos individuais, a aplicação pode gerar um **Daily Briefing**, consolidando os principais e-mails processados em um único relatório organizado por prioridade.
+
+
+## 🧠 Classificação Inteligente
+
+Antes do envio de um e-mail para a Inteligência Artificial, a aplicação realiza uma classificação inicial para identificar mensagens com características de newsletters ou conteúdos meramente informativos.
+
+Essa etapa permite:
+
+* reduzir chamadas desnecessárias ao modelo de IA;
+* melhorar o desempenho da aplicação;
+* diminuir custos de processamento;
+* tornar o Daily Briefing mais relevante.
+
+A classificação foi implementada de forma extensível, permitindo incorporar novos critérios e categorias nas próximas versões do projeto.
+
 
 # 🏗️ Arquitetura
 
@@ -181,6 +239,7 @@ src
 ├── ai
 │   ├── client
 │   ├── dto
+│   ├── exception
 │   ├── parser
 │   ├── provider
 │   └── service
@@ -190,11 +249,15 @@ src
 │   ├── service
 │   └── validator
 │
+├── briefing
+│   ├── dto
+│   └── service
+│
 ├── config
 ├── controller
 ├── dto
-├── exception
 ├── provider
+├── security
 └── service
 ```
 
@@ -209,7 +272,8 @@ Entre as principais medidas adotadas estão:
 ## Credenciais
 
 * ✅ OAuth 2.0 para autenticação com a Gmail API;
-* ✅ Escopo Gmail READONLY;
+```markdown
+* ✅ Escopos Gmail READONLY e GMAIL_SEND;
 * ✅ API Key do Google Gemini armazenada em variável de ambiente;
 * ✅ `credentials.json` mantido fora do controle de versão;
 * ✅ `.gitignore` configurado para impedir o versionamento de arquivos sensíveis.
@@ -322,64 +386,40 @@ http://localhost:8080
 
 # 📌 Endpoints
 
-| Método | Endpoint              | Descrição                        |
-| ------ | --------------------- | -------------------------------- |
-| GET    | `/emails`             | Lista os e-mails mais recentes   |
-| GET    | `/emails/{id}`        | Retorna os detalhes de um e-mail |
-| GET    | `/emails/{id}/resumo` | Gera um resumo utilizando IA     |
+| Método | Endpoint                     | Descrição                                        |
+| ------ | ---------------------------- | ------------------------------------------------ |
+| GET    | `/emails`                    | Lista os e-mails mais recentes                   |
+| GET    | `/emails/{id}`               | Retorna os detalhes de um e-mail                 |
+| GET    | `/emails/{id}/resumo`        | Gera um resumo utilizando IA                     |
+| POST   | `/emails/{id}/resumo/enviar` | Gera e envia automaticamente o resumo por e-mail |
+| GET    | `/emails/briefing`           | Gera o Daily Briefing                            |
 
----
+# 📋 Daily Briefing
+
+Além dos resumos individuais, a aplicação pode gerar um **Daily Briefing**, consolidando os principais e-mails processados em um único relatório organizado por prioridade.
+
+O briefing apresenta:
+
+* quantidade de e-mails analisados;
+* distribuição por prioridade;
+* pendências;
+* ações sugeridas;
+* pessoas citadas;
+* necessidade de resposta;
+* nível de confiança da IA.
+
+Esse recurso foi desenvolvido para oferecer uma visão rápida das principais demandas do dia, reduzindo o tempo gasto na triagem da caixa de entrada.
 
 # 🗺️ Roadmap
 
-## ✅ Fase 1 — Integração com Gmail
+As próximas evoluções previstas para o projeto incluem:
 
-* Leitura de e-mails
-* OAuth 2.0
-* Gmail API
-* Extração do corpo da mensagem
-
-**Status:** Concluída
-
----
-
-## ✅ Fase 2 — Inteligência Artificial
-
-* Integração com Google Gemini
-* Geração de resumo estruturado
-* Parser dedicado (`GeminiResponseParser`)
-* PromptBuilderService
-* Tratamento de exceções
-* Refatoração da arquitetura
-* Testes unitários
-
-**Status:** Concluída
-
----
-
-## ✅ Fase 2.5 — Processamento de Anexos
-
-* Leitura de arquivos PDF
-* Leitura de arquivos DOCX
-* Leitura de arquivos TXT
-* Validação de anexos
-* Inclusão do conteúdo dos anexos na análise da IA
-
-**Status:** Concluída
-
----
-
-## 🚧 Próximas versões
-
-Entre as evoluções previstas para as próximas versões estão:
-
-* suporte ao Microsoft Outlook;
-* novos provedores de Inteligência Artificial;
+* execução automática dos resumos utilizando `@Scheduled`;
+* configuração de múltiplos destinatários;
+* integração com Microsoft Outlook;
 * processamento de imagens em anexos (OCR);
-* painel web para consulta de resumos;
-* envio automático dos resumos por e-mail;
-* execução agendada;
-* suporte a múltiplas contas de e-mail.
+* dashboard web para consulta dos resumos e briefings;
+* suporte a novos provedores de Inteligência Artificial.
 
 ---
 
