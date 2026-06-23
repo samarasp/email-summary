@@ -272,7 +272,6 @@ Entre as principais medidas adotadas estão:
 ## Credenciais
 
 * ✅ OAuth 2.0 para autenticação com a Gmail API;
-```markdown
 * ✅ Escopos Gmail READONLY e GMAIL_SEND;
 * ✅ API Key do Google Gemini armazenada em variável de ambiente;
 * ✅ `credentials.json` mantido fora do controle de versão;
@@ -299,7 +298,6 @@ A organização do projeto segue princípios que favorecem a manutenção e redu
 * separação entre camadas;
 * componentes especializados e reutilizáveis.
 
----
 
 # ✅ Qualidade do Código
 
@@ -315,7 +313,6 @@ Entre as melhorias implementadas estão:
 
 Essa organização torna o sistema mais simples de testar, evoluir e manter.
 
----
 
 # 🧪 Testes
 
@@ -360,15 +357,25 @@ Além dos testes específicos, a aplicação também possui teste de carregament
 
 ## Configuração
 
-Defina a chave da API do Gemini como variável de ambiente:
+1. Defina a chave da API do Gemini como variável de ambiente:
 
 ```bash
 GEMINI_API_KEY=sua_chave_aqui
 ```
 
-Adicione o arquivo `credentials.json` (OAuth 2.0) na pasta configurada pela aplicação.
+2. Adicione o arquivo `credentials.json` (OAuth 2.0) no local configurado pela aplicação.
 
-> **Importante:** Nunca versione credenciais, tokens ou chaves de API.
+3. Na primeira execução, autorize o acesso à sua conta Google. O token OAuth será gerado automaticamente.
+
+> **Importante**
+>
+> Nunca versione:
+>
+> * `credentials.json`;
+> * a pasta `data/tokens`;
+> * chaves de API;
+> * tokens OAuth;
+> * qualquer outra credencial da aplicação.
 
 ## Executando
 
@@ -376,11 +383,12 @@ Adicione o arquivo `credentials.json` (OAuth 2.0) na pasta configurada pela apli
 mvn spring-boot:run
 ```
 
-A aplicação estará disponível em:
+Após a inicialização, a aplicação estará disponível em:
 
 ```text
 http://localhost:8080
 ```
+
 
 ---
 
