@@ -46,7 +46,6 @@ public class GmailEmailSenderService implements EmailSenderService {
 
         MimeMessage email = new MimeMessage(session);
 
-        email.setFrom(new InternetAddress("me"));
         email.addRecipient(
                 jakarta.mail.Message.RecipientType.TO,
                 new InternetAddress(destinatario)

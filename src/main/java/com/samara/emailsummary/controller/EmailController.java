@@ -17,6 +17,7 @@ import com.samara.emailsummary.briefing.service.DailyBriefingService;
 import com.samara.emailsummary.briefing.dto.EmailCategory;
 import com.samara.emailsummary.briefing.service.EmailClassificationService;
 import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
+import com.samara.emailsummary.service.EmailSummaryService;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,6 +40,7 @@ public class EmailController {
     private final DailyBriefingService dailyBriefingService;
     private final DailyBriefingFormatterService dailyBriefingFormatterService;
     private final EmailClassificationService emailClassificationService;
+    private final EmailSummaryService emailSummaryService;
 
     public EmailController(
             EmailService emailService,
@@ -47,7 +49,8 @@ public class EmailController {
             EmailSummaryFormatterService formatterService,
             DailyBriefingService dailyBriefingService,
             DailyBriefingFormatterService dailyBriefingFormatterService,
-            EmailClassificationService emailClassificationService
+            EmailClassificationService emailClassificationService,
+            EmailSummaryService emailSummaryService
     ) {
         this.emailService = emailService;
         this.summaryService = summaryService;
@@ -56,6 +59,7 @@ public class EmailController {
         this.dailyBriefingService = dailyBriefingService;
         this.dailyBriefingFormatterService = dailyBriefingFormatterService;
         this.emailClassificationService = emailClassificationService;
+        this.emailSummaryService = emailSummaryService;
     }
 
     @GetMapping("/teste")
@@ -90,22 +94,9 @@ public class EmailController {
     public ResponseEntity<String> enviarResumoPorEmail(@PathVariable String id) {
 
         try {
-            EmailDetalheDTO email = emailService.buscarEmailPorId(id);
-
-            SummaryRequest request = new SummaryRequest(
-                    email.getAssunto(),
-                    email.getRemetente(),
-                    email.getCorpo()
-            );
-
-            SummaryResponse resumo = summaryService.gerarResumo(request);
-
-            String corpoEmail = formatterService.formatar(resumo);
-
-            emailSenderService.enviarResumo(
-                    "presidente@sbot.org.br",
-                    "Resumo do e-mail: " + email.getAssunto(),
-                    corpoEmail
+            emailSummaryService.enviarResumoPorEmail(
+                    id,
+                    "user"
             );
 
             return ResponseEntity.ok("Resumo enviado por e-mail com sucesso.");
