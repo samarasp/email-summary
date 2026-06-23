@@ -3,6 +3,7 @@ package com.samara.emailsummary.ai.provider;
 import com.samara.emailsummary.ai.client.GeminiClient;
 import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
+import com.samara.emailsummary.ai.exception.AiCommunicationException;
 import com.samara.emailsummary.ai.parser.GeminiResponseParser;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -11,8 +12,11 @@ import java.util.List;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.Test;
 
 class GeminiProviderTest {
@@ -106,7 +110,7 @@ class GeminiProviderTest {
     }
 
     @Test
-    void deveRetornarRespostaErroQuandoGeminiClientLancarInterruptedException() throws Exception {
+    void deveLancarAiCommunicationExceptionQuandoGeminiClientLancarInterruptedException() throws Exception {
 
         GeminiClient geminiClient = mock(GeminiClient.class);
         GeminiResponseParser responseParser = mock(GeminiResponseParser.class);
@@ -122,11 +126,14 @@ class GeminiProviderTest {
         when(geminiClient.gerarConteudo(request.conteudo()))
                 .thenThrow(new InterruptedException("Chamada interrompida"));
 
-        SummaryResponse resposta = provider.gerarResumo(request);
+        assertThrows(
+                AiCommunicationException.class,
+                () -> provider.gerarResumo(request)
+        );
 
-        assertEquals("Erro ao comunicar com o serviço de IA.", resposta.resumo());
-        assertEquals("Não classificada", resposta.prioridade());
-        assertEquals("Baixa", resposta.nivelConfianca());
+        assertTrue(Thread.currentThread().isInterrupted());
+
+        Thread.interrupted();
     }
 
 }

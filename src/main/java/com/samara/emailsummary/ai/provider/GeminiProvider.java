@@ -8,6 +8,7 @@ import com.samara.emailsummary.ai.parser.GeminiResponseParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import com.samara.emailsummary.ai.exception.AiCommunicationException;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,8 +53,8 @@ public class GeminiProvider implements AiProvider {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Comunicação com o Gemini interrompida.", e);
-            return respostaErro();
+            log.error("Comunicação com o Gemini interrompida.");
+            throw new AiCommunicationException("Comunicação com o serviço de IA interrompida.", e);
         }
     }
 

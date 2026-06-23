@@ -50,7 +50,10 @@ public class GoogleAuthorizationService {
                 GoogleNetHttpTransport.newTrustedTransport(),
                 JSON_FACTORY,
                 clientSecrets,
-                List.of(GmailScopes.GMAIL_READONLY)
+                List.of(
+                        GmailScopes.GMAIL_READONLY,
+                        GmailScopes.GMAIL_SEND
+                )
         )
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                 .setAccessType("offline")
