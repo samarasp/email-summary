@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
@@ -28,7 +30,15 @@ public class GoogleAuthorizationService {
 
     private static final String TOKENS_DIRECTORY_PATH = "data/tokens";
 
-    private GoogleClientSecrets loadClientSecrets() throws IOException {
+    private static final String EXTERNAL_CREDENTIALS_FILE_PATH = "config/credentials.json";
+
+    private InputStream localizarCredentials() throws IOException {
+
+        File externalCredentials = new File(EXTERNAL_CREDENTIALS_FILE_PATH);
+
+        if (externalCredentials.exists() && externalCredentials.isFile()) {
+            return new FileInputStream(externalCredentials);
+        }
 
         InputStream inputStream = getClass()
                 .getResourceAsStream(CREDENTIALS_FILE_PATH);
@@ -36,6 +46,13 @@ public class GoogleAuthorizationService {
         if (inputStream == null) {
             throw new IOException("Arquivo credentials.json não encontrado.");
         }
+
+        return inputStream;
+    }
+
+    private GoogleClientSecrets loadClientSecrets() throws IOException {
+
+        InputStream inputStream = localizarCredentials();
 
         return GoogleClientSecrets.load(
                 JSON_FACTORY,
