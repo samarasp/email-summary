@@ -1,0 +1,121 @@
+package com.samara.emailsummary.briefing.service;
+
+import com.samara.emailsummary.ai.dto.SummaryRequest;
+import com.samara.emailsummary.ai.dto.SummaryResponse;
+import com.samara.emailsummary.ai.service.SummaryService;
+import com.samara.emailsummary.briefing.dto.DailyBriefing;
+import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
+import com.samara.emailsummary.briefing.dto.EmailCategory;
+import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
+import com.samara.emailsummary.dto.EmailDetalheDTO;
+import com.samara.emailsummary.dto.EmailResumoDTO;
+import com.samara.emailsummary.service.EmailSenderService;
+import com.samara.emailsummary.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class DailyBriefingEmailService {
+
+    private final EmailService emailService;
+    private final SummaryService summaryService;
+    private final DailyBriefingService dailyBriefingService;
+    private final DailyBriefingFormatterService dailyBriefingFormatterService;
+    private final EmailClassificationService emailClassificationService;
+    private final EmailSenderService emailSenderService;
+
+    @Value("${email.summary.destination}")
+    private String destination;
+
+    public DailyBriefingEmailService(
+            EmailService emailService,
+            SummaryService summaryService,
+            DailyBriefingService dailyBriefingService,
+            DailyBriefingFormatterService dailyBriefingFormatterService,
+            EmailClassificationService emailClassificationService,
+            EmailSenderService emailSenderService
+    ) {
+        this.emailService = emailService;
+        this.summaryService = summaryService;
+        this.dailyBriefingService = dailyBriefingService;
+        this.dailyBriefingFormatterService = dailyBriefingFormatterService;
+        this.emailClassificationService = emailClassificationService;
+        this.emailSenderService = emailSenderService;
+    }
+
+    public void enviarBriefingDiario() {
+
+        List<EmailResumoDTO> emails = emailService.listarEmails();
+
+        List<DailyBriefingItem> itens = new ArrayList<>();
+
+        int numero = 1;
+
+        for (EmailResumoDTO emailResumo : emails) {
+
+            EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
+
+            if (email.getAssunto() != null &&
+                    email.getAssunto().startsWith("Resumo do e-mail:")) {
+                continue;
+            }
+
+            EmailClassificationResult classificacao =
+                    emailClassificationService.classificar(
+                            email.getAssunto(),
+                            email.getRemetente(),
+                            email.getCorpo()
+                    );
+
+            SummaryResponse resumo;
+
+            if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
+                resumo = new SummaryResponse(
+                        "E-mail identificado como informativo/newsletter.",
+                        "Baixa",
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        List.of(),
+                        false,
+                        "",
+                        "Alta"
+                );
+            } else {
+                SummaryRequest request = new SummaryRequest(
+                        email.getAssunto(),
+                        email.getRemetente(),
+                        email.getCorpo()
+                );
+
+                resumo = summaryService.gerarResumo(request);
+            }
+
+            DailyBriefingItem item = new DailyBriefingItem(
+                    numero,
+                    email,
+                    resumo
+            );
+
+            itens.add(item);
+            numero++;
+        }
+
+        DailyBriefing briefing = dailyBriefingService.criarBriefing(itens);
+
+        String corpo = dailyBriefingFormatterService.formatar(briefing);
+
+        String data = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        emailSenderService.enviarResumo(
+                destination,
+                "Daily Briefing - " + data,
+                corpo
+        );
+    }
+}

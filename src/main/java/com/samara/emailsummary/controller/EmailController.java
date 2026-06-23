@@ -3,13 +3,14 @@ package com.samara.emailsummary.controller;
 import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
 import com.samara.emailsummary.ai.service.SummaryService;
+import com.samara.emailsummary.ai.exception.AiCommunicationException;
+
 import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
-import com.samara.emailsummary.service.EmailSenderService;
+
 import com.samara.emailsummary.service.EmailService;
-import com.samara.emailsummary.service.EmailSummaryFormatterService;
-import org.springframework.http.ResponseEntity;
-import com.samara.emailsummary.ai.exception.AiCommunicationException;
+import com.samara.emailsummary.service.EmailSummaryService;
+
 import com.samara.emailsummary.briefing.dto.DailyBriefing;
 import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
 import com.samara.emailsummary.briefing.service.DailyBriefingFormatterService;
@@ -17,8 +18,9 @@ import com.samara.emailsummary.briefing.service.DailyBriefingService;
 import com.samara.emailsummary.briefing.dto.EmailCategory;
 import com.samara.emailsummary.briefing.service.EmailClassificationService;
 import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
-import com.samara.emailsummary.service.EmailSummaryService;
 
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,11 +34,8 @@ import java.util.ArrayList;
 @RestController
 @RequestMapping("/emails")
 public class EmailController {
-
     private final EmailService emailService;
     private final SummaryService summaryService;
-    private final EmailSenderService emailSenderService;
-    private final EmailSummaryFormatterService formatterService;
     private final DailyBriefingService dailyBriefingService;
     private final DailyBriefingFormatterService dailyBriefingFormatterService;
     private final EmailClassificationService emailClassificationService;
@@ -45,22 +44,19 @@ public class EmailController {
     public EmailController(
             EmailService emailService,
             SummaryService summaryService,
-            EmailSenderService emailSenderService,
-            EmailSummaryFormatterService formatterService,
             DailyBriefingService dailyBriefingService,
             DailyBriefingFormatterService dailyBriefingFormatterService,
             EmailClassificationService emailClassificationService,
             EmailSummaryService emailSummaryService
+
     ) {
         this.emailService = emailService;
         this.summaryService = summaryService;
-        this.emailSenderService = emailSenderService;
-        this.formatterService = formatterService;
         this.dailyBriefingService = dailyBriefingService;
         this.dailyBriefingFormatterService = dailyBriefingFormatterService;
         this.emailClassificationService = emailClassificationService;
         this.emailSummaryService = emailSummaryService;
-    }
+     }
 
     @GetMapping("/teste")
     public EmailResumoDTO obterEmailTeste() {
