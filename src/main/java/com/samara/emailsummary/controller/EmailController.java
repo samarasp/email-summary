@@ -94,10 +94,7 @@ public class EmailController {
     public ResponseEntity<String> enviarResumoPorEmail(@PathVariable String id) {
 
         try {
-            emailSummaryService.enviarResumoPorEmail(
-                    id,
-                    "user"
-            );
+            emailSummaryService.enviarResumoPorEmail(id);
 
             return ResponseEntity.ok("Resumo enviado por e-mail com sucesso.");
 

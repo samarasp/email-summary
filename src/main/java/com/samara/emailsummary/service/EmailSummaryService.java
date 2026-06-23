@@ -4,10 +4,15 @@ import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
 import com.samara.emailsummary.ai.service.SummaryService;
 import com.samara.emailsummary.dto.EmailDetalheDTO;
+
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class EmailSummaryService {
+
+    @Value("${email.summary.destination}")
+    private String destination;
 
     private final EmailService emailService;
     private final SummaryService summaryService;
@@ -26,7 +31,7 @@ public class EmailSummaryService {
         this.emailSenderService = emailSenderService;
     }
 
-    public void enviarResumoPorEmail(String emailId, String destinatario) {
+    public void enviarResumoPorEmail(String emailId) {
 
         EmailDetalheDTO email = emailService.buscarEmailPorId(emailId);
 
@@ -42,6 +47,6 @@ public class EmailSummaryService {
 
         String assunto = "Resumo do e-mail: " + email.getAssunto();
 
-        emailSenderService.enviarResumo(destinatario, assunto, corpoFormatado);
+        emailSenderService.enviarResumo(destination, assunto, corpoFormatado);
     }
 }
