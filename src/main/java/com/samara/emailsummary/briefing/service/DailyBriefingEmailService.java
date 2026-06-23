@@ -11,6 +11,8 @@ import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailSenderService;
 import com.samara.emailsummary.service.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,8 @@ import java.util.List;
 
 @Service
 public class DailyBriefingEmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(DailyBriefingEmailService.class);
 
     private final EmailService emailService;
     private final SummaryService summaryService;
@@ -58,52 +62,57 @@ public class DailyBriefingEmailService {
 
         for (EmailResumoDTO emailResumo : emails) {
 
-            EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
+            try {
+                EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
-            if (email.getAssunto() != null &&
-                    email.getAssunto().startsWith("Resumo do e-mail:")) {
-                continue;
-            }
+                if (email.getAssunto() != null &&
+                        email.getAssunto().startsWith("Resumo do e-mail:")) {
+                    continue;
+                }
 
-            EmailClassificationResult classificacao =
-                    emailClassificationService.classificar(
+                EmailClassificationResult classificacao =
+                        emailClassificationService.classificar(
+                                email.getAssunto(),
+                                email.getRemetente(),
+                                email.getCorpo()
+                        );
+
+                SummaryResponse resumo;
+
+                if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
+                    resumo = new SummaryResponse(
+                            "E-mail identificado como informativo/newsletter.",
+                            "Baixa",
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            List.of(),
+                            false,
+                            "",
+                            "Alta"
+                    );
+                } else {
+                    SummaryRequest request = new SummaryRequest(
                             email.getAssunto(),
                             email.getRemetente(),
                             email.getCorpo()
                     );
 
-            SummaryResponse resumo;
+                    resumo = summaryService.gerarResumo(request);
+                }
 
-            if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
-                resumo = new SummaryResponse(
-                        "E-mail identificado como informativo/newsletter.",
-                        "Baixa",
-                        List.of(),
-                        List.of(),
-                        List.of(),
-                        List.of(),
-                        false,
-                        "",
-                        "Alta"
-                );
-            } else {
-                SummaryRequest request = new SummaryRequest(
-                        email.getAssunto(),
-                        email.getRemetente(),
-                        email.getCorpo()
+                DailyBriefingItem item = new DailyBriefingItem(
+                        numero,
+                        email,
+                        resumo
                 );
 
-                resumo = summaryService.gerarResumo(request);
+                itens.add(item);
+                numero++;
+
+            } catch (Exception e) {
+                log.warn("Falha ao processar um e-mail no Daily Briefing. O processamento continuará.", e);
             }
-
-            DailyBriefingItem item = new DailyBriefingItem(
-                    numero,
-                    email,
-                    resumo
-            );
-
-            itens.add(item);
-            numero++;
         }
 
         DailyBriefing briefing = dailyBriefingService.criarBriefing(itens);
