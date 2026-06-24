@@ -20,6 +20,7 @@ import com.samara.emailsummary.briefing.service.DailyBriefingService;
 import com.samara.emailsummary.briefing.dto.EmailCategory;
 import com.samara.emailsummary.briefing.service.EmailClassificationService;
 import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
+import com.samara.emailsummary.briefing.context.DailyBriefingContextBuilder;
 
 
 import org.springframework.http.ResponseEntity;
@@ -43,6 +44,7 @@ public class EmailController {
     private final EmailClassificationService emailClassificationService;
     private final EmailSummaryService emailSummaryService;
     private final EmailContextBuilder emailContextBuilder;
+    private final DailyBriefingContextBuilder dailyBriefingContextBuilder;
 
     public EmailController(
             EmailService emailService,
@@ -51,7 +53,8 @@ public class EmailController {
             DailyBriefingFormatterService dailyBriefingFormatterService,
             EmailClassificationService emailClassificationService,
             EmailSummaryService emailSummaryService,
-            EmailContextBuilder emailContextBuilder
+            EmailContextBuilder emailContextBuilder,
+            DailyBriefingContextBuilder dailyBriefingContextBuilder
 
     ) {
         this.emailService = emailService;
@@ -61,6 +64,7 @@ public class EmailController {
         this.emailClassificationService = emailClassificationService;
         this.emailSummaryService = emailSummaryService;
         this.emailContextBuilder = emailContextBuilder;
+        this.dailyBriefingContextBuilder = dailyBriefingContextBuilder;
      }
 
     @GetMapping("/teste")
@@ -109,79 +113,33 @@ public class EmailController {
     }
 
     @GetMapping("/briefing")
-    public ResponseEntity<String> gerarBriefingDiario() {
+    public SummaryResponse gerarBriefingDiario() {
 
-        try {
-            List<EmailResumoDTO> emails = emailService.listarEmails();
+        List<EmailResumoDTO> emails = emailService.listarEmails();
 
-            List<DailyBriefingItem> itens = new ArrayList<>();
+        List<EmailDetalheDTO> emailsDetalhados = new ArrayList<>();
 
-            int numero = 1;
+        for (EmailResumoDTO emailResumo : emails) {
 
-            for (EmailResumoDTO emailResumo : emails) {
+            EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
-                EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
-
-                if (email.getAssunto() != null &&
-                        email.getAssunto().startsWith("Resumo do e-mail:")) {
-                    continue;
-                }
-
-                EmailClassificationResult classificacao =
-                        emailClassificationService.classificar(
-                                email.getAssunto(),
-                                email.getRemetente(),
-                                email.getCorpo()
-                        );
-
-                SummaryResponse resumo;
-
-                if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
-                    resumo = new SummaryResponse(
-                            "E-mail identificado como informativo/newsletter.",
-                            "Baixa",
-                            List.of(),
-                            List.of(),
-                            List.of(),
-                            List.of(),
-                            false,
-                            "",
-                            "Alta"
-                    );
-                } else {
-                    SummaryRequest request = new SummaryRequest(
-                            email.getAssunto(),
-                            email.getRemetente(),
-                            email.getCorpo()
-                    );
-
-                    resumo = summaryService.gerarResumo(request);
-                }
-
-                DailyBriefingItem item = new DailyBriefingItem(
-                        numero,
-                        email,
-                        resumo
-                );
-
-                itens.add(item);
-                numero++;
+            if (email.getAssunto() != null &&
+                    email.getAssunto().startsWith("Resumo do e-mail:")) {
+                continue;
             }
 
-            DailyBriefing briefing = dailyBriefingService.criarBriefing(itens);
-
-            String texto = dailyBriefingFormatterService.formatar(briefing);
-
-            return ResponseEntity
-                    .ok()
-                    .contentType(MediaType.parseMediaType("text/plain; charset=UTF-8"))
-                    .body(texto);
-
-        } catch (AiCommunicationException e) {
-            return ResponseEntity
-                    .status(503)
-                    .body("Não foi possível gerar o briefing porque o serviço de IA está temporariamente indisponível.");
+            emailsDetalhados.add(email);
         }
+
+        String contexto = dailyBriefingContextBuilder.construirContexto(emailsDetalhados);
+
+        SummaryRequest request = new SummaryRequest(
+                "Briefing diário de e-mails",
+                "Sistema Email Summary",
+                contexto
+        );
+
+        return summaryService.gerarResumo(request);
     }
 
 }

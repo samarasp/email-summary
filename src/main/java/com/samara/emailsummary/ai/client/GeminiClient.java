@@ -68,12 +68,13 @@ public class GeminiClient {
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             log.warn(
-                    "Falha na chamada ao Gemini. Status HTTP: {}. Tempo: {} ms.",
+                    "Falha na chamada ao Gemini. Status HTTP: {}. Tempo: {} ms. Resposta: {}",
                     response.statusCode(),
-                    duracaoMs
+                    duracaoMs,
+                    limitarTexto(response.body(), 1000)
             );
 
-            throw new IOException("Erro ao chamar Gemini.");
+            throw new IOException("Erro ao chamar Gemini. Status HTTP: " + response.statusCode());
         }
 
         GeminiResponse geminiResponse = objectMapper.readValue(
@@ -114,4 +115,19 @@ public class GeminiClient {
 
         return response;
     }
+
+    private String limitarTexto(String texto, int limite) {
+        if (texto == null) {
+            return "";
+        }
+
+        String textoLimpo = texto.trim();
+
+        if (textoLimpo.length() <= limite) {
+            return textoLimpo;
+        }
+
+        return textoLimpo.substring(0, limite) + "...";
+    }
+
 }
