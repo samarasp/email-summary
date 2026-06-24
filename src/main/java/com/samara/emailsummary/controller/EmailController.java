@@ -2,70 +2,43 @@ package com.samara.emailsummary.controller;
 
 import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
-import com.samara.emailsummary.ai.service.SummaryService;
 import com.samara.emailsummary.ai.exception.AiCommunicationException;
-
-import com.samara.emailsummary.dto.EmailDetalheDTO;
-import com.samara.emailsummary.dto.EmailResumoDTO;
-
-import com.samara.emailsummary.service.EmailService;
-import com.samara.emailsummary.service.EmailSummaryService;
-
+import com.samara.emailsummary.ai.service.SummaryService;
 import com.samara.emailsummary.briefing.context.EmailContext;
 import com.samara.emailsummary.briefing.context.EmailContextBuilder;
-import com.samara.emailsummary.briefing.dto.DailyBriefing;
-import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
-import com.samara.emailsummary.briefing.service.DailyBriefingFormatterService;
-import com.samara.emailsummary.briefing.service.DailyBriefingService;
-import com.samara.emailsummary.briefing.dto.EmailCategory;
-import com.samara.emailsummary.briefing.service.EmailClassificationService;
-import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
-import com.samara.emailsummary.briefing.context.DailyBriefingContextBuilder;
-
-
+import com.samara.emailsummary.briefing.service.DailyBriefingEmailService;
+import com.samara.emailsummary.dto.EmailDetalheDTO;
+import com.samara.emailsummary.dto.EmailResumoDTO;
+import com.samara.emailsummary.service.EmailService;
+import com.samara.emailsummary.service.EmailSummaryService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/emails")
 public class EmailController {
+
     private final EmailService emailService;
     private final SummaryService summaryService;
-    private final DailyBriefingService dailyBriefingService;
-    private final DailyBriefingFormatterService dailyBriefingFormatterService;
-    private final EmailClassificationService emailClassificationService;
     private final EmailSummaryService emailSummaryService;
     private final EmailContextBuilder emailContextBuilder;
-    private final DailyBriefingContextBuilder dailyBriefingContextBuilder;
+    private final DailyBriefingEmailService dailyBriefingEmailService;
 
     public EmailController(
             EmailService emailService,
             SummaryService summaryService,
-            DailyBriefingService dailyBriefingService,
-            DailyBriefingFormatterService dailyBriefingFormatterService,
-            EmailClassificationService emailClassificationService,
             EmailSummaryService emailSummaryService,
             EmailContextBuilder emailContextBuilder,
-            DailyBriefingContextBuilder dailyBriefingContextBuilder
-
+            DailyBriefingEmailService dailyBriefingEmailService
     ) {
         this.emailService = emailService;
         this.summaryService = summaryService;
-        this.dailyBriefingService = dailyBriefingService;
-        this.dailyBriefingFormatterService = dailyBriefingFormatterService;
-        this.emailClassificationService = emailClassificationService;
         this.emailSummaryService = emailSummaryService;
         this.emailContextBuilder = emailContextBuilder;
-        this.dailyBriefingContextBuilder = dailyBriefingContextBuilder;
-     }
+        this.dailyBriefingEmailService = dailyBriefingEmailService;
+    }
 
     @GetMapping("/teste")
     public EmailResumoDTO obterEmailTeste() {
@@ -114,32 +87,6 @@ public class EmailController {
 
     @GetMapping("/briefing")
     public SummaryResponse gerarBriefingDiario() {
-
-        List<EmailResumoDTO> emails = emailService.listarEmails();
-
-        List<EmailDetalheDTO> emailsDetalhados = new ArrayList<>();
-
-        for (EmailResumoDTO emailResumo : emails) {
-
-            EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
-
-            if (email.getAssunto() != null &&
-                    email.getAssunto().startsWith("Resumo do e-mail:")) {
-                continue;
-            }
-
-            emailsDetalhados.add(email);
-        }
-
-        String contexto = dailyBriefingContextBuilder.construirContexto(emailsDetalhados);
-
-        SummaryRequest request = new SummaryRequest(
-                "Briefing diário de e-mails",
-                "Sistema Email Summary",
-                contexto
-        );
-
-        return summaryService.gerarResumo(request);
+        return dailyBriefingEmailService.gerarBriefingInteligente();
     }
-
 }

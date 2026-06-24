@@ -7,6 +7,7 @@ import com.samara.emailsummary.briefing.dto.DailyBriefing;
 import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
 import com.samara.emailsummary.briefing.dto.EmailCategory;
 import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
+import com.samara.emailsummary.briefing.context.DailyBriefingContextBuilder;
 import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailSenderService;
@@ -32,6 +33,7 @@ public class DailyBriefingEmailService {
     private final DailyBriefingFormatterService dailyBriefingFormatterService;
     private final EmailClassificationService emailClassificationService;
     private final EmailSenderService emailSenderService;
+    private final DailyBriefingContextBuilder dailyBriefingContextBuilder;
 
     @Value("${email.summary.destination}")
     private String destination;
@@ -42,7 +44,8 @@ public class DailyBriefingEmailService {
             DailyBriefingService dailyBriefingService,
             DailyBriefingFormatterService dailyBriefingFormatterService,
             EmailClassificationService emailClassificationService,
-            EmailSenderService emailSenderService
+            EmailSenderService emailSenderService,
+            DailyBriefingContextBuilder dailyBriefingContextBuilder
     ) {
         this.emailService = emailService;
         this.summaryService = summaryService;
@@ -50,6 +53,7 @@ public class DailyBriefingEmailService {
         this.dailyBriefingFormatterService = dailyBriefingFormatterService;
         this.emailClassificationService = emailClassificationService;
         this.emailSenderService = emailSenderService;
+        this.dailyBriefingContextBuilder = dailyBriefingContextBuilder;
     }
 
     public void enviarBriefingDiario() {
@@ -127,4 +131,34 @@ public class DailyBriefingEmailService {
                 corpo
         );
     }
+
+    public SummaryResponse gerarBriefingInteligente() {
+
+        List<EmailResumoDTO> emails = emailService.listarEmails();
+
+        List<EmailDetalheDTO> emailsDetalhados = new ArrayList<>();
+
+        for (EmailResumoDTO emailResumo : emails) {
+
+            EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
+
+            if (email.getAssunto() != null &&
+                    email.getAssunto().startsWith("Resumo do e-mail:")) {
+                continue;
+            }
+
+            emailsDetalhados.add(email);
+        }
+
+        String contexto = dailyBriefingContextBuilder.construirContexto(emailsDetalhados);
+
+        SummaryRequest request = new SummaryRequest(
+                "Briefing diário de e-mails",
+                "Sistema Email Summary",
+                contexto
+        );
+
+        return summaryService.gerarResumo(request);
+    }
+
 }
