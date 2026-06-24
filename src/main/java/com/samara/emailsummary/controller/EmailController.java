@@ -11,6 +11,8 @@ import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailService;
 import com.samara.emailsummary.service.EmailSummaryService;
 
+import com.samara.emailsummary.briefing.context.EmailContext;
+import com.samara.emailsummary.briefing.context.EmailContextBuilder;
 import com.samara.emailsummary.briefing.dto.DailyBriefing;
 import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
 import com.samara.emailsummary.briefing.service.DailyBriefingFormatterService;
@@ -40,6 +42,7 @@ public class EmailController {
     private final DailyBriefingFormatterService dailyBriefingFormatterService;
     private final EmailClassificationService emailClassificationService;
     private final EmailSummaryService emailSummaryService;
+    private final EmailContextBuilder emailContextBuilder;
 
     public EmailController(
             EmailService emailService,
@@ -47,7 +50,8 @@ public class EmailController {
             DailyBriefingService dailyBriefingService,
             DailyBriefingFormatterService dailyBriefingFormatterService,
             EmailClassificationService emailClassificationService,
-            EmailSummaryService emailSummaryService
+            EmailSummaryService emailSummaryService,
+            EmailContextBuilder emailContextBuilder
 
     ) {
         this.emailService = emailService;
@@ -56,6 +60,7 @@ public class EmailController {
         this.dailyBriefingFormatterService = dailyBriefingFormatterService;
         this.emailClassificationService = emailClassificationService;
         this.emailSummaryService = emailSummaryService;
+        this.emailContextBuilder = emailContextBuilder;
      }
 
     @GetMapping("/teste")
@@ -77,10 +82,12 @@ public class EmailController {
     public SummaryResponse gerarResumo(@PathVariable String id) {
         EmailDetalheDTO email = emailService.buscarEmailPorId(id);
 
+        EmailContext contexto = emailContextBuilder.criarContexto(email);
+
         SummaryRequest request = new SummaryRequest(
                 email.getAssunto(),
                 email.getRemetente(),
-                email.getCorpo()
+                contexto.conteudoParaIA()
         );
 
         return summaryService.gerarResumo(request);
