@@ -56,10 +56,7 @@ public class GeminiClient {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(
-                request,
-                HttpResponse.BodyHandlers.ofString()
-        );
+        HttpResponse<String> response = enviarComRetry(request);
 
         long duracaoMs = System.currentTimeMillis() - inicio;
 
@@ -75,6 +72,7 @@ public class GeminiClient {
                     response.statusCode(),
                     duracaoMs
             );
+
             throw new IOException("Erro ao chamar Gemini.");
         }
 
@@ -90,5 +88,30 @@ public class GeminiClient {
                 .getParts()
                 .getFirst()
                 .getText();
+    }
+
+    private HttpResponse<String> enviarComRetry(HttpRequest request)
+            throws IOException, InterruptedException {
+
+        HttpResponse<String> response = httpClient.send(
+                request,
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        if (response.statusCode() == 429 || response.statusCode() == 503) {
+            log.warn(
+                    "Gemini retornou status {}. Tentando novamente em 3 segundos.",
+                    response.statusCode()
+            );
+
+            Thread.sleep(3000);
+
+            response = httpClient.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return response;
     }
 }
