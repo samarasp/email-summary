@@ -53,11 +53,7 @@ public class EmailContextBuilder {
                 valorOuVazio(emailAtual.getCorpo())
         ));
 
-        List<EmailDetalheDTO> historico = emailsDaThread.stream()
-                .filter(email -> email.getId() != null)
-                .filter(email -> !email.getId().equals(emailAtual.getId()))
-                .limit(MAX_EMAILS_CONTEXTO)
-                .toList();
+        List<EmailDetalheDTO> historico = selecionarHistoricoAnterior(emailAtual, emailsDaThread);
 
         if (!historico.isEmpty()) {
             contexto.append("""
@@ -92,6 +88,34 @@ public class EmailContextBuilder {
         }
 
         return contexto.toString();
+    }
+
+    private List<EmailDetalheDTO> selecionarHistoricoAnterior(
+            EmailDetalheDTO emailAtual,
+            List<EmailDetalheDTO> emailsDaThread
+    ) {
+        if (emailsDaThread == null || emailsDaThread.isEmpty()) {
+            return List.of();
+        }
+
+        int indiceEmailAtual = -1;
+
+        for (int i = 0; i < emailsDaThread.size(); i++) {
+            EmailDetalheDTO email = emailsDaThread.get(i);
+
+            if (email.getId() != null && email.getId().equals(emailAtual.getId())) {
+                indiceEmailAtual = i;
+                break;
+            }
+        }
+
+        if (indiceEmailAtual <= 0) {
+            return List.of();
+        }
+
+        int inicio = Math.max(0, indiceEmailAtual - MAX_EMAILS_CONTEXTO);
+
+        return emailsDaThread.subList(inicio, indiceEmailAtual);
     }
 
     private String valorOuVazio(String valor) {
