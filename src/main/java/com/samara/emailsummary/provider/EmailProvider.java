@@ -12,4 +12,6 @@ public interface EmailProvider {
     List<EmailResumoDTO> listarEmails();
 
     EmailDetalheDTO buscarEmailPorId(String id);
+
+    List<EmailDetalheDTO> buscarEmailsPorThreadId(String threadId);
 }
