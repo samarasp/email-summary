@@ -24,6 +24,7 @@ public class SummaryService {
         String prompt = promptBuilderService.construirPrompt(request);
 
         SummaryRequest requestComPrompt = new SummaryRequest(
+                request.analysisType(),
                 request.assunto(),
                 request.remetente(),
                 prompt

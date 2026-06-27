@@ -12,6 +12,7 @@ import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailSenderService;
 import com.samara.emailsummary.service.EmailService;
+import com.samara.emailsummary.ai.dto.AnalysisType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -97,6 +98,7 @@ public class DailyBriefingEmailService {
                     );
                 } else {
                     SummaryRequest request = new SummaryRequest(
+                            AnalysisType.EMAIL_SUMMARY,
                             email.getAssunto(),
                             email.getRemetente(),
                             email.getCorpo()
@@ -153,6 +155,7 @@ public class DailyBriefingEmailService {
         String contexto = dailyBriefingContextBuilder.construirContexto(emailsDetalhados);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.DAILY_BRIEFING,
                 "Briefing diário de e-mails",
                 "Sistema Email Summary",
                 contexto

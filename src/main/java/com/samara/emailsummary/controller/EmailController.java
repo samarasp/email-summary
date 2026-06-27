@@ -11,6 +11,7 @@ import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailService;
 import com.samara.emailsummary.service.EmailSummaryService;
+import com.samara.emailsummary.ai.dto.AnalysisType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -62,6 +63,7 @@ public class EmailController {
         EmailContext contexto = emailContextBuilder.criarContexto(email);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 email.getAssunto(),
                 email.getRemetente(),
                 contexto.conteudoParaIA()
