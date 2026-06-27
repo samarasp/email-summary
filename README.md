@@ -10,7 +10,7 @@ O **Email Summary** é uma aplicação backend desenvolvida em **Java 21** e **S
 
 A solução integra-se à **Gmail API** por meio de **OAuth 2.0**, realiza a leitura segura das mensagens, processa automaticamente seus anexos e utiliza o **Google Gemini** para transformar o conteúdo dos e-mails em informações estruturadas e acionáveis.
 
-Além da geração de resumos executivos, a aplicação é capaz de identificar prioridades, destacar pendências, sugerir ações, detectar a necessidade de resposta, elaborar sugestões de resposta e consolidar essas informações em um **Daily Briefing**, permitindo uma visão rápida dos principais assuntos recebidos.
+Além da geração de resumos executivos, a aplicação é capaz de identificar prioridades, destacar pendências, sugerir ações, detectar a necessidade de resposta, elaborar sugestões de resposta, consolidar essas informações em um **Daily Briefing Inteligente** e utilizar o histórico de conversas (threads do Gmail) para gerar resumos individuais mais contextualizados..
 
 O sistema também pode enviar automaticamente os resumos gerados por e-mail utilizando a própria Gmail API, criando um fluxo completo de automação para acompanhamento de mensagens corporativas.
 
@@ -97,7 +97,7 @@ Antes do envio para a Inteligência Artificial, o conteúdo é tratado automatic
 * ✅ Remoção de históricos de conversas;
 * ✅ Remoção de encaminhamentos;
 * ✅ Normalização do texto para melhorar a qualidade da análise;
-* ✅ Construção automática de contexto para resumos individuais e briefings;
+* ✅ Construção automática de contexto para resumos individuais, utilizando histórico da thread quando disponível, e para Daily Briefings;
 * ✅ Classificação local dos e-mails por relevância antes da análise da IA;
 
 ## 🤖 Inteligência Artificial
@@ -106,6 +106,7 @@ A integração com o Google Gemini permite gerar automaticamente:
 
 Além dos resumos individuais, a aplicação possui um modo de **Briefing Inteligente**, que consolida diversos e-mails em uma única análise utilizando apenas uma chamada ao Gemini. Antes do envio para a IA, os e-mails passam por classificação, priorização e preparação de contexto, reduzindo o consumo da API e melhorando a qualidade da resposta.
 
+* ✅ Resumos individuais com contexto inteligente utilizando histórico de threads do Gmail;
 * ✅ Daily Briefing Inteligente;
 * ✅ Classificação de prioridade;
 * ✅ Pendências;
@@ -124,7 +125,8 @@ A aplicação utiliza uma arquitetura baseada em preparação de contexto antes 
 
 O fluxo de processamento segue as etapas:
 
-* Construção de contexto (Context Builder);
+* Construção de contexto para resumos individuais (incluindo histórico da thread quando disponível);
+* Construção de contexto para Daily Briefings;
 * Classificação e priorização local dos e-mails;
 * Seleção automática do tipo de análise (`AnalysisType`);
 * Geração de prompts especializados para resumos individuais e briefings;
