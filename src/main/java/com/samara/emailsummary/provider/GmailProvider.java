@@ -8,8 +8,10 @@ import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.dto.AttachmentMetadataDTO;
 import com.samara.emailsummary.attachment.service.AttachmentProcessingService;
 import com.samara.emailsummary.attachment.service.AttachmentValidationService;
+
 import com.google.api.services.gmail.model.MessagePartBody;
 import com.google.api.services.gmail.model.MessagePartHeader;
+import com.google.api.services.gmail.model.Thread;
 
 import org.springframework.stereotype.Service;
 
@@ -355,6 +357,29 @@ public class GmailProvider implements EmailProvider {
         return corpo +
                 "\n\n==================== ANEXOS ====================\n\n" +
                 textoDosAnexos;
+    }
+
+    @Override
+    public List<EmailDetalheDTO> buscarEmailsPorThreadId(String threadId) {
+        try {
+            Thread thread = gmail.users()
+                    .threads()
+                    .get("me", threadId)
+                    .setFormat("full")
+                    .execute();
+
+            if (thread.getMessages() == null || thread.getMessages().isEmpty()) {
+                return List.of();
+            }
+
+            return thread.getMessages()
+                    .stream()
+                    .map(message -> buscarEmailPorId(message.getId()))
+                    .toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar e-mails por thread ID", e);
+        }
     }
 
 }
