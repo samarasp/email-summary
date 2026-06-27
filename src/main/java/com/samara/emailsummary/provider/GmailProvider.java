@@ -382,4 +382,117 @@ public class GmailProvider implements EmailProvider {
         }
     }
 
+    @Override
+    public List<EmailDetalheDTO> buscarEmailsRelacionados(EmailDetalheDTO email) {
+        try {
+            List<String> termosBusca = montarTermosDeBusca(email);
+
+            List<EmailDetalheDTO> emailsRelacionados = new ArrayList<>();
+
+            for (String termoBusca : termosBusca) {
+                List<Message> mensagens = gmail.users()
+                        .messages()
+                        .list("me")
+                        .setQ(termoBusca)
+                        .setMaxResults(5L)
+                        .execute()
+                        .getMessages();
+
+                if (mensagens == null || mensagens.isEmpty()) {
+                    continue;
+                }
+
+                List<EmailDetalheDTO> encontrados = mensagens.stream()
+                        .filter(mensagem -> !mensagem.getId().equals(email.getId()))
+                        .map(mensagem -> buscarEmailPorId(mensagem.getId()))
+                        .toList();
+
+                emailsRelacionados.addAll(encontrados);
+            }
+
+            return emailsRelacionados.stream()
+                    .filter(resultado -> resultado.getId() != null)
+                    .filter(resultado -> !resultado.getId().equals(email.getId()))
+                    .distinct()
+                    .limit(5)
+                    .toList();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao buscar e-mails relacionados no Gmail", e);
+        }
+    }
+
+    private List<String> montarTermosDeBusca(EmailDetalheDTO email) {
+        String assunto = limparAssuntoParaBusca(email.getAssunto());
+        List<String> palavras = extrairPalavrasRelevantes(assunto);
+
+        List<String> termos = new ArrayList<>();
+
+        if (!palavras.isEmpty()) {
+            termos.add(String.join(" ", palavras)
+                    + " -in:trash -in:spam newer_than:365d");
+        }
+
+        String remetente = extrairEmailRemetente(email.getRemetente());
+
+        if (!remetente.isBlank() && !palavras.isEmpty()) {
+            termos.add("from:" + remetente + " "
+                    + String.join(" ", palavras.stream().limit(2).toList())
+                    + " -in:trash -in:spam newer_than:365d");
+        }
+
+        if (!remetente.isBlank()) {
+            termos.add("from:" + remetente + " -in:trash -in:spam newer_than:365d");
+        }
+
+        if (termos.isEmpty()) {
+            termos.add("-in:trash -in:spam newer_than:365d");
+        }
+
+        return termos;
+    }
+
+    private String extrairEmailRemetente(String remetente) {
+        if (remetente == null || remetente.isBlank()) {
+            return "";
+        }
+
+        int inicio = remetente.indexOf("<");
+        int fim = remetente.indexOf(">");
+
+        if (inicio >= 0 && fim > inicio) {
+            return remetente.substring(inicio + 1, fim).trim();
+        }
+
+        return remetente.trim();
+    }
+
+    private String limparAssuntoParaBusca(String assunto) {
+        if (assunto == null || assunto.isBlank()) {
+            return "";
+        }
+
+        return assunto
+                .replace("RE:", "")
+                .replace("Re:", "")
+                .replace("ENC:", "")
+                .replace("FWD:", "")
+                .replace("Fw:", "")
+                .replace("[Informe - FPMed]", "")
+                .trim();
+    }
+
+    private List<String> extrairPalavrasRelevantes(String texto) {
+        return List.of(texto.split("\\s+"))
+                .stream()
+                .map(palavra -> palavra.replaceAll("[^\\p{L}\\p{N}]", ""))
+                .filter(palavra -> palavra.length() >= 4)
+                .filter(palavra -> !palavra.equalsIgnoreCase("para"))
+                .filter(palavra -> !palavra.equalsIgnoreCase("sobre"))
+                .filter(palavra -> !palavra.equalsIgnoreCase("com"))
+                .filter(palavra -> !palavra.equalsIgnoreCase("nova"))
+                .limit(4)
+                .toList();
+    }
+
 }

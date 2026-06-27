@@ -14,4 +14,6 @@ public interface EmailProvider {
     EmailDetalheDTO buscarEmailPorId(String id);
 
     List<EmailDetalheDTO> buscarEmailsPorThreadId(String threadId);
+
+    List<EmailDetalheDTO> buscarEmailsRelacionados(EmailDetalheDTO email);
 }

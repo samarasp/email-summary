@@ -2,6 +2,7 @@ package com.samara.emailsummary.briefing.context;
 
 import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.service.ThreadContextService;
+import com.samara.emailsummary.service.MailboxContextService;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,15 +14,28 @@ public class EmailContextBuilder {
 
     private final ThreadContextService threadContextService;
 
-    public EmailContextBuilder(ThreadContextService threadContextService) {
+    private final MailboxContextService mailboxContextService;
+
+    public EmailContextBuilder(
+            ThreadContextService threadContextService,
+            MailboxContextService mailboxContextService
+    ) {
         this.threadContextService = threadContextService;
+        this.mailboxContextService = mailboxContextService;
     }
 
     public EmailContext criarContexto(EmailDetalheDTO email) {
         List<EmailDetalheDTO> emailsDaThread = threadContextService
                 .recuperarContextoPorThread(email.getThreadId());
 
-        String conteudoParaIA = montarConteudo(email, emailsDaThread);
+        List<EmailDetalheDTO> emailsRelacionados = mailboxContextService
+                .recuperarEmailsRelacionados(email);
+
+        String conteudoParaIA = montarConteudo(
+                email,
+                emailsDaThread,
+                emailsRelacionados
+        );
 
         return new EmailContext(
                 email,
@@ -29,7 +43,11 @@ public class EmailContextBuilder {
         );
     }
 
-    private String montarConteudo(EmailDetalheDTO emailAtual, List<EmailDetalheDTO> emailsDaThread) {
+    private String montarConteudo(
+            EmailDetalheDTO emailAtual,
+            List<EmailDetalheDTO> emailsDaThread,
+            List<EmailDetalheDTO> emailsRelacionados
+    ) {
         StringBuilder contexto = new StringBuilder();
 
         contexto.append("""
@@ -79,6 +97,40 @@ public class EmailContextBuilder {
                         Corpo:
                         %s
                         """.formatted(
+                        valorOuVazio(email.getRemetente()),
+                        valorOuVazio(email.getAssunto()),
+                        valorOuVazio(email.getData()),
+                        limitarTexto(valorOuVazio(email.getCorpo()), 1500)
+                ));
+            }
+        }
+
+        if (!emailsRelacionados.isEmpty()) {
+
+            contexto.append("""
+
+            ==================== CONTEXTO DA CAIXA DE E-MAIL ====================
+
+            E-mails relacionados encontrados:
+            """);
+
+            for (EmailDetalheDTO email : emailsRelacionados) {
+
+                contexto.append("""
+
+                ---
+                Remetente:
+                %s
+
+                Assunto:
+                %s
+
+                Data:
+                %s
+
+                Corpo:
+                %s
+                """.formatted(
                         valorOuVazio(email.getRemetente()),
                         valorOuVazio(email.getAssunto()),
                         valorOuVazio(email.getData()),
