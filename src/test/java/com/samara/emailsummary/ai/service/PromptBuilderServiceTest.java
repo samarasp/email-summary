@@ -1,6 +1,8 @@
 package com.samara.emailsummary.ai.service;
 
 import com.samara.emailsummary.ai.dto.SummaryRequest;
+import com.samara.emailsummary.ai.dto.AnalysisType;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +15,7 @@ class PromptBuilderServiceTest {
         PromptBuilderService service = new PromptBuilderService();
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 "diretoria@sbot.org.br",
                 "Reunião da Diretoria",
                 "A reunião ocorrerá na próxima sexta-feira."

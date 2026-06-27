@@ -5,6 +5,7 @@ import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
 import com.samara.emailsummary.ai.exception.AiCommunicationException;
 import com.samara.emailsummary.ai.parser.GeminiResponseParser;
+import com.samara.emailsummary.ai.dto.AnalysisType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -29,6 +30,7 @@ class GeminiProviderTest {
         GeminiProvider provider = new GeminiProvider(geminiClient, responseParser);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 "diretoria@sbot.org.br",
                 "Fatura IBDM",
                 "Confirmo o recebimento da fatura."
@@ -67,6 +69,7 @@ class GeminiProviderTest {
         GeminiProvider provider = new GeminiProvider(geminiClient, responseParser);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 "diretoria@sbot.org.br",
                 "Fatura IBDM",
                 "Confirmo o recebimento da fatura."
@@ -91,6 +94,7 @@ class GeminiProviderTest {
         GeminiProvider provider = new GeminiProvider(geminiClient, responseParser);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 "diretoria@sbot.org.br",
                 "Fatura IBDM",
                 "Confirmo o recebimento da fatura."
@@ -118,6 +122,7 @@ class GeminiProviderTest {
         GeminiProvider provider = new GeminiProvider(geminiClient, responseParser);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 "diretoria@sbot.org.br",
                 "Fatura IBDM",
                 "Confirmo o recebimento da fatura."

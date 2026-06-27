@@ -4,6 +4,7 @@ import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
 import com.samara.emailsummary.ai.service.SummaryService;
 import com.samara.emailsummary.dto.EmailDetalheDTO;
+import com.samara.emailsummary.ai.dto.AnalysisType;
 
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +37,7 @@ public class EmailSummaryService {
         EmailDetalheDTO email = emailService.buscarEmailPorId(emailId);
 
         SummaryRequest request = new SummaryRequest(
+                AnalysisType.EMAIL_SUMMARY,
                 email.getAssunto(),
                 email.getRemetente(),
                 email.getCorpo()

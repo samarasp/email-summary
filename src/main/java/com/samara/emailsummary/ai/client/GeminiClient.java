@@ -56,10 +56,7 @@ public class GeminiClient {
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .build();
 
-        HttpResponse<String> response = httpClient.send(
-                request,
-                HttpResponse.BodyHandlers.ofString()
-        );
+        HttpResponse<String> response = enviarComRetry(request);
 
         long duracaoMs = System.currentTimeMillis() - inicio;
 
@@ -71,11 +68,13 @@ public class GeminiClient {
 
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             log.warn(
-                    "Falha na chamada ao Gemini. Status HTTP: {}. Tempo: {} ms.",
+                    "Falha na chamada ao Gemini. Status HTTP: {}. Tempo: {} ms. Resposta: {}",
                     response.statusCode(),
-                    duracaoMs
+                    duracaoMs,
+                    limitarTexto(response.body(), 1000)
             );
-            throw new IOException("Erro ao chamar Gemini.");
+
+            throw new IOException("Erro ao chamar Gemini. Status HTTP: " + response.statusCode());
         }
 
         GeminiResponse geminiResponse = objectMapper.readValue(
@@ -91,4 +90,44 @@ public class GeminiClient {
                 .getFirst()
                 .getText();
     }
+
+    private HttpResponse<String> enviarComRetry(HttpRequest request)
+            throws IOException, InterruptedException {
+
+        HttpResponse<String> response = httpClient.send(
+                request,
+                HttpResponse.BodyHandlers.ofString()
+        );
+
+        if (response.statusCode() == 429 || response.statusCode() == 503) {
+            log.warn(
+                    "Gemini retornou status {}. Tentando novamente em 3 segundos.",
+                    response.statusCode()
+            );
+
+            Thread.sleep(3000);
+
+            response = httpClient.send(
+                    request,
+                    HttpResponse.BodyHandlers.ofString()
+            );
+        }
+
+        return response;
+    }
+
+    private String limitarTexto(String texto, int limite) {
+        if (texto == null) {
+            return "";
+        }
+
+        String textoLimpo = texto.trim();
+
+        if (textoLimpo.length() <= limite) {
+            return textoLimpo;
+        }
+
+        return textoLimpo.substring(0, limite) + "...";
+    }
+
 }
