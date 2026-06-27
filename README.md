@@ -2,7 +2,6 @@
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-green)
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 ## Sobre o projeto
@@ -30,7 +29,6 @@ Desde o início do desenvolvimento, o projeto foi concebido com foco em:
 
 ## 🔄 Fluxo da Aplicação
 
-```text
                  Gmail API
                      │
                      ▼
@@ -40,7 +38,16 @@ Desde o início do desenvolvimento, o projeto foi concebido com foco em:
           Pré-processamento do texto
                      │
                      ▼
-        Processamento de anexos (PDF/DOCX/TXT)
+      Processamento de anexos (PDF/DOCX/TXT)
+                     │
+                     ▼
+      Context Builder / Briefing Builder
+                     │
+                     ▼
+    Classificação e priorização local
+                     │
+                     ▼
+     Prompt especializado (AnalysisType)
                      │
                      ▼
               Google Gemini
@@ -50,11 +57,11 @@ Desde o início do desenvolvimento, o projeto foi concebido com foco em:
                      │
           ┌──────────┴──────────┐
           ▼                     ▼
-Resumo formatado         Daily Briefing
+Resumo Executivo       Daily Briefing Inteligente
           │
           ▼
 Envio automático por e-mail
-```
+
 
 # ✨ Funcionalidades
 
@@ -89,13 +96,17 @@ Antes do envio para a Inteligência Artificial, o conteúdo é tratado automatic
 * ✅ Remoção de assinaturas;
 * ✅ Remoção de históricos de conversas;
 * ✅ Remoção de encaminhamentos;
-* ✅ Normalização do texto para melhorar a qualidade da análise.
+* ✅ Normalização do texto para melhorar a qualidade da análise;
+* ✅ Construção automática de contexto para resumos individuais e briefings;
+* ✅ Classificação local dos e-mails por relevância antes da análise da IA;
 
 ## 🤖 Inteligência Artificial
 
 A integração com o Google Gemini permite gerar automaticamente:
 
-* ✅ Resumo executivo;
+Além dos resumos individuais, a aplicação possui um modo de **Briefing Inteligente**, que consolida diversos e-mails em uma única análise utilizando apenas uma chamada ao Gemini. Antes do envio para a IA, os e-mails passam por classificação, priorização e preparação de contexto, reduzindo o consumo da API e melhorando a qualidade da resposta.
+
+* ✅ Daily Briefing Inteligente;
 * ✅ Classificação de prioridade;
 * ✅ Pendências;
 * ✅ Ações sugeridas;
@@ -106,6 +117,20 @@ A integração com o Google Gemini permite gerar automaticamente:
 * ✅ Nível de confiança da análise.
 
 A resposta é retornada em formato JSON e convertida automaticamente para objetos Java utilizando **Jackson (`ObjectMapper`)**.
+
+## 🧠 Arquitetura da IA
+
+A aplicação utiliza uma arquitetura baseada em preparação de contexto antes da interação com a Inteligência Artificial.
+
+O fluxo de processamento segue as etapas:
+
+* Construção de contexto (Context Builder);
+* Classificação e priorização local dos e-mails;
+* Seleção automática do tipo de análise (`AnalysisType`);
+* Geração de prompts especializados para resumos individuais e briefings;
+* Processamento pelo Google Gemini.
+
+Essa abordagem reduz significativamente o consumo da API, melhora a qualidade das respostas e mantém a lógica de negócio desacoplada do provedor de IA.
 
 ## 🌐 API REST
 
