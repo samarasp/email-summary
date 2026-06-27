@@ -5,6 +5,7 @@ import java.util.List;
 public class EmailDetalheDTO {
 
     private String id;
+    private String threadId;
     private String remetente;
     private String assunto;
     private String corpo;
@@ -18,6 +19,14 @@ public class EmailDetalheDTO {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(String threadId) {
+        this.threadId = threadId;
     }
 
     public String getRemetente() {

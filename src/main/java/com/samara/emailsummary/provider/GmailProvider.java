@@ -233,6 +233,7 @@ public class GmailProvider implements EmailProvider {
             EmailDetalheDTO email = new EmailDetalheDTO();
 
             email.setId(id);
+            email.setThreadId(mensagemCompleta.getThreadId());
             email.setRemetente(remetente);
             email.setAssunto(assunto);
             email.setData(dataFormatada);
