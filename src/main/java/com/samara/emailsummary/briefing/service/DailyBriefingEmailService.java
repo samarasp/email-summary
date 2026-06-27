@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Comparator;
 
 @Service
 public class DailyBriefingEmailService {
@@ -152,7 +153,11 @@ public class DailyBriefingEmailService {
             emailsDetalhados.add(email);
         }
 
-        String contexto = dailyBriefingContextBuilder.construirContexto(emailsDetalhados);
+        List<EmailDetalheDTO> emailsOrdenadosPorRelevancia = emailsDetalhados.stream()
+                .sorted(Comparator.comparingInt(this::obterPesoRelevancia).reversed())
+                .toList();
+
+        String contexto = dailyBriefingContextBuilder.construirContexto(emailsOrdenadosPorRelevancia);
 
         SummaryRequest request = new SummaryRequest(
                 AnalysisType.DAILY_BRIEFING,
@@ -162,6 +167,16 @@ public class DailyBriefingEmailService {
         );
 
         return summaryService.gerarResumo(request);
+    }
+
+    private int obterPesoRelevancia(EmailDetalheDTO email) {
+        EmailClassificationResult classificacao = emailClassificationService.classificar(
+                email.getAssunto(),
+                email.getRemetente(),
+                email.getCorpo()
+        );
+
+        return classificacao.categoria().getPeso();
     }
 
 }

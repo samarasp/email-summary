@@ -46,7 +46,7 @@ public class PromptBuilderService {
             - acoesSugeridas: lista de ações recomendadas.
             - pendencias: lista de pendências identificadas.
             - prazos: lista de prazos mencionados.
-            - pessoasCitadas: lista de pessoas citadas no e-mail.
+            - pessoasCitadas: liste apenas pessoas, instituições, comissões ou áreas relevantes para decisão, ação, pendência ou contexto institucional; ignore nomes usados apenas em saudações ou cumprimentos.
             - necessitaResposta: true se o e-mail exigir resposta; caso contrário, false.
             - sugestaoResposta: preencha apenas se necessitaResposta for true; caso contrário, use string vazia.
             - nivelConfianca: use apenas "Baixa", "Média" ou "Alta".
@@ -91,6 +91,9 @@ public class PromptBuilderService {
             - trate newsletters e comunicados informativos como informações secundárias;
             - destaque riscos, urgências ou pontos sensíveis;
             - use apenas o conteúdo fornecido;
+            - não expanda siglas nem deduza nomes de instituições;
+            - em pessoasCitadas, liste apenas pessoas, instituições, comissões ou áreas relevantes para tomada de decisão;
+            - ignore apelidos, saudações e nomes citados apenas em cumprimentos, salvo se forem relevantes para uma ação ou pendência;
             - não invente informações.
 
             Responda EXCLUSIVAMENTE em JSON válido.
