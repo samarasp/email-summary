@@ -49,3 +49,6 @@ logs/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Desktop configuration
+config/

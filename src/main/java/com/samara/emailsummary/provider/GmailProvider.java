@@ -3,15 +3,16 @@ package com.samara.emailsummary.provider;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 import com.google.api.services.gmail.model.MessagePart;
+import com.google.api.services.gmail.model.MessagePartBody;
+import com.google.api.services.gmail.model.MessagePartHeader;
+import com.google.api.services.gmail.model.Thread;
+
 import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.dto.AttachmentMetadataDTO;
 import com.samara.emailsummary.attachment.service.AttachmentProcessingService;
 import com.samara.emailsummary.attachment.service.AttachmentValidationService;
-
-import com.google.api.services.gmail.model.MessagePartBody;
-import com.google.api.services.gmail.model.MessagePartHeader;
-import com.google.api.services.gmail.model.Thread;
+import com.samara.emailsummary.config.EmailSummaryProperties;
 
 import org.springframework.stereotype.Service;
 
@@ -27,13 +28,16 @@ public class GmailProvider implements EmailProvider {
     private final Gmail gmail;
     private final AttachmentValidationService attachmentValidationService;
     private final AttachmentProcessingService attachmentProcessingService;
+    private final EmailSummaryProperties emailSummaryProperties;
 
     public GmailProvider(Gmail gmail,
                          AttachmentValidationService attachmentValidationService,
-                         AttachmentProcessingService attachmentProcessingService) {
+                         AttachmentProcessingService attachmentProcessingService,
+                         EmailSummaryProperties emailSummaryProperties) {
         this.gmail = gmail;
         this.attachmentValidationService = attachmentValidationService;
         this.attachmentProcessingService = attachmentProcessingService;
+        this.emailSummaryProperties = emailSummaryProperties;
     }
 
     @Override
@@ -52,13 +56,14 @@ public class GmailProvider implements EmailProvider {
     @Override
     public List<EmailResumoDTO> listarEmails() {
         try {
+            long maxResults = Math.max(1, emailSummaryProperties.getMaxEmailsPerRun());
+
             List<Message> mensagens = gmail.users()
                     .messages()
                     .list("me")
-                    .setMaxResults(5L)
+                    .setMaxResults(maxResults)
                     .execute()
                     .getMessages();
-
             if (mensagens == null || mensagens.isEmpty()) {
                 return List.of();
             }
@@ -389,12 +394,15 @@ public class GmailProvider implements EmailProvider {
 
             List<EmailDetalheDTO> emailsRelacionados = new ArrayList<>();
 
+            long maxContextEmails = Math.max(1, emailSummaryProperties.getContextEmails());
+
             for (String termoBusca : termosBusca) {
+
                 List<Message> mensagens = gmail.users()
                         .messages()
                         .list("me")
                         .setQ(termoBusca)
-                        .setMaxResults(5L)
+                        .setMaxResults(maxContextEmails)
                         .execute()
                         .getMessages();
 
@@ -414,7 +422,7 @@ public class GmailProvider implements EmailProvider {
                     .filter(resultado -> resultado.getId() != null)
                     .filter(resultado -> !resultado.getId().equals(email.getId()))
                     .distinct()
-                    .limit(5)
+                    .limit(maxContextEmails)
                     .toList();
 
         } catch (Exception e) {
@@ -423,6 +431,9 @@ public class GmailProvider implements EmailProvider {
     }
 
     private List<String> montarTermosDeBusca(EmailDetalheDTO email) {
+
+        long contextDays = Math.max(1, emailSummaryProperties.getContextDays());
+
         String assunto = limparAssuntoParaBusca(email.getAssunto());
         List<String> palavras = extrairPalavrasRelevantes(assunto);
 
@@ -430,7 +441,7 @@ public class GmailProvider implements EmailProvider {
 
         if (!palavras.isEmpty()) {
             termos.add(String.join(" ", palavras)
-                    + " -in:trash -in:spam newer_than:365d");
+                    + " -in:trash -in:spam newer_than:" + contextDays + "d");
         }
 
         String remetente = extrairEmailRemetente(email.getRemetente());
@@ -438,15 +449,16 @@ public class GmailProvider implements EmailProvider {
         if (!remetente.isBlank() && !palavras.isEmpty()) {
             termos.add("from:" + remetente + " "
                     + String.join(" ", palavras.stream().limit(2).toList())
-                    + " -in:trash -in:spam newer_than:365d");
+                    + " -in:trash -in:spam newer_than:" + contextDays + "d");
         }
 
         if (!remetente.isBlank()) {
-            termos.add("from:" + remetente + " -in:trash -in:spam newer_than:365d");
+            termos.add("from:" + remetente
+                    + " -in:trash -in:spam newer_than:" + contextDays + "d");
         }
 
         if (termos.isEmpty()) {
-            termos.add("-in:trash -in:spam newer_than:365d");
+            termos.add("-in:trash -in:spam newer_than:" + contextDays + "d");
         }
 
         return termos;
