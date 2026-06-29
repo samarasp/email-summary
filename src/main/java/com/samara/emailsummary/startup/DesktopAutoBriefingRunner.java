@@ -1,4 +1,4 @@
-package com.samara.emailsummary.desktop;
+package com.samara.emailsummary.startup;
 
 import com.samara.emailsummary.briefing.service.DailyBriefingEmailService;
 import org.springframework.boot.ApplicationArguments;
