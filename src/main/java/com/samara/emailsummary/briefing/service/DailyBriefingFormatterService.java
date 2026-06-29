@@ -18,8 +18,10 @@ public class DailyBriefingFormatterService {
     private static final DateTimeFormatter HORA_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm");
 
-    public String formatar(DailyBriefing briefing) {
-
+    public String formatar(
+            DailyBriefing briefing,
+            String resumoGeral
+    ) {
         StringBuilder texto = new StringBuilder();
 
         texto.append("═══════════════════════════════\n");
@@ -30,12 +32,15 @@ public class DailyBriefingFormatterService {
                 .append("\n");
         texto.append("═══════════════════════════════\n\n");
 
-        texto.append("📌 O QUE MERECE SUA ATENÇÃO\n\n");
-        texto.append("Este briefing apresenta os principais e-mails recebidos, organizados por prioridade.\n\n");
-
-        texto.append("═══════════════════════════════\n\n");
-
         texto.append("📊 RESUMO GERAL\n\n");
+
+        if (resumoGeral != null && !resumoGeral.isBlank()) {
+            texto.append(resumoGeral).append("\n\n");
+        } else {
+            texto.append("Resumo geral não informado.\n\n");
+        }
+
+        texto.append("📈 NÚMEROS DO DIA\n\n");
         texto.append("• E-mails recebidos: ").append(briefing.totalEmails()).append("\n");
         texto.append("• Alta prioridade: ").append(briefing.altaPrioridade()).append("\n");
         texto.append("• Média prioridade: ").append(briefing.mediaPrioridade()).append("\n");
@@ -45,9 +50,11 @@ public class DailyBriefingFormatterService {
 
         texto.append("═══════════════════════════════\n\n");
 
-        adicionarSecaoPrioridade(texto, "🔴 PRIORIDADE ALTA", briefing.itens(), "Alta");
-        adicionarSecaoPrioridade(texto, "🟡 PRIORIDADE MÉDIA", briefing.itens(), "Média");
-        adicionarSecaoPrioridade(texto, "🟢 PRIORIDADE BAIXA", briefing.itens(), "Baixa");
+        texto.append("📌 E-MAILS POR PRIORIDADE\n\n");
+
+        adicionarSecaoPrioridade(texto, "🔥 ALTA PRIORIDADE", briefing.itens(), "Alta");
+        adicionarSecaoPrioridade(texto, "⚠️ MÉDIA PRIORIDADE", briefing.itens(), "Média");
+        adicionarSecaoPrioridade(texto, "📎 BAIXA PRIORIDADE", briefing.itens(), "Baixa");
 
         texto.append("Fim do briefing.\n");
 

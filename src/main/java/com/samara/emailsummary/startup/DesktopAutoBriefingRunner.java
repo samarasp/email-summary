@@ -35,7 +35,7 @@ public class DesktopAutoBriefingRunner implements ApplicationRunner {
             System.out.println("========================================");
             System.out.println();
 
-            dailyBriefingEmailService.enviarBriefingInteligente();
+            dailyBriefingEmailService.enviarBriefingDiario();
 
             System.out.println();
             System.out.println("========================================");

@@ -71,8 +71,7 @@ public class DailyBriefingEmailService {
             try {
                 EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
-                if (email.getAssunto() != null &&
-                        email.getAssunto().startsWith("Resumo do e-mail:")) {
+                if (deveIgnorarEmail(email.getAssunto())) {
                     continue;
                 }
 
@@ -124,7 +123,12 @@ public class DailyBriefingEmailService {
 
         DailyBriefing briefing = dailyBriefingService.criarBriefing(itens);
 
-        String corpo = dailyBriefingFormatterService.formatar(briefing);
+        SummaryResponse briefingInteligente = gerarBriefingInteligente();
+
+        String corpo = dailyBriefingFormatterService.formatar(
+                briefing,
+                briefingInteligente.resumo()
+        );
 
         String data = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
@@ -276,6 +280,18 @@ public class DailyBriefingEmailService {
         );
 
         return classificacao.categoria().getPeso();
+    }
+
+    private boolean deveIgnorarEmail(String assunto) {
+        if (assunto == null || assunto.isBlank()) {
+            return false;
+        }
+
+        String assuntoNormalizado = assunto.trim().toLowerCase();
+
+        return assuntoNormalizado.startsWith("resumo do e-mail:")
+                || assuntoNormalizado.startsWith("daily briefing")
+                || assuntoNormalizado.startsWith("briefing da manhã");
     }
 
 }
