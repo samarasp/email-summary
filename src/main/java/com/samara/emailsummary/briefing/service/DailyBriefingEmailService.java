@@ -172,51 +172,92 @@ public class DailyBriefingEmailService {
     public void enviarBriefingInteligente() {
         SummaryResponse briefing = gerarBriefingInteligente();
 
+        String divisor = "═══════════════════════════════\n";
+
+        String dataHora = java.time.LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy • HH:mm"));
+
         StringBuilder corpo = new StringBuilder();
 
-        corpo.append("DAILY BRIEFING INTELIGENTE\n");
-        corpo.append("==========================\n\n");
+        corpo.append(divisor);
+        corpo.append("📨 DAILY BRIEFING INTELIGENTE\n\n");
+        corpo.append(dataHora).append("\n");
+        corpo.append(divisor).append("\n");
 
-        corpo.append("Resumo Executivo:\n");
+        corpo.append("📌 RESUMO EXECUTIVO\n\n");
         corpo.append(briefing.resumo()).append("\n\n");
 
-        corpo.append("Prioridade: ");
+        corpo.append(divisor).append("\n");
+
+        corpo.append("🔥 PRIORIDADE\n\n");
         corpo.append(briefing.prioridade()).append("\n\n");
 
-        corpo.append("Ações sugeridas:\n");
-        briefing.acoesSugeridas().forEach(acao ->
-                corpo.append("- ").append(acao).append("\n")
-        );
+        corpo.append(divisor).append("\n");
+
+        corpo.append("✅ AÇÕES SUGERIDAS\n\n");
+        if (briefing.acoesSugeridas() == null || briefing.acoesSugeridas().isEmpty()) {
+            corpo.append("• Nenhuma ação sugerida.\n");
+        } else {
+            briefing.acoesSugeridas().forEach(acao ->
+                    corpo.append("• ").append(acao).append("\n")
+            );
+        }
         corpo.append("\n");
 
-        corpo.append("Pendências:\n");
-        briefing.pendencias().forEach(pendencia ->
-                corpo.append("- ").append(pendencia).append("\n")
-        );
+        corpo.append(divisor).append("\n");
+
+        corpo.append("📋 PENDÊNCIAS\n\n");
+        if (briefing.pendencias() == null || briefing.pendencias().isEmpty()) {
+            corpo.append("• Nenhuma pendência identificada.\n");
+        } else {
+            briefing.pendencias().forEach(pendencia ->
+                    corpo.append("• ").append(pendencia).append("\n")
+            );
+        }
         corpo.append("\n");
 
-        corpo.append("Prazos:\n");
-        briefing.prazos().forEach(prazo ->
-                corpo.append("- ").append(prazo).append("\n")
-        );
+        corpo.append(divisor).append("\n");
+
+        corpo.append("📅 PRAZOS\n\n");
+        if (briefing.prazos() == null || briefing.prazos().isEmpty()) {
+            corpo.append("• Nenhum prazo identificado.\n");
+        } else {
+            briefing.prazos().forEach(prazo ->
+                    corpo.append("• ").append(prazo).append("\n")
+            );
+        }
         corpo.append("\n");
 
-        corpo.append("Pessoas citadas:\n");
-        briefing.pessoasCitadas().forEach(pessoa ->
-                corpo.append("- ").append(pessoa).append("\n")
-        );
+        corpo.append(divisor).append("\n");
+
+        corpo.append("👥 PESSOAS CITADAS\n\n");
+        if (briefing.pessoasCitadas() == null || briefing.pessoasCitadas().isEmpty()) {
+            corpo.append("• Nenhuma pessoa citada.\n");
+        } else {
+            briefing.pessoasCitadas().forEach(pessoa ->
+                    corpo.append("• ").append(pessoa).append("\n")
+            );
+        }
         corpo.append("\n");
 
-        corpo.append("Necessita resposta: ");
+        corpo.append(divisor).append("\n");
+
+        corpo.append("✉️ NECESSITA RESPOSTA\n\n");
         corpo.append(briefing.necessitaResposta() ? "Sim" : "Não").append("\n\n");
 
         if (briefing.sugestaoResposta() != null && !briefing.sugestaoResposta().isBlank()) {
-            corpo.append("Sugestão de resposta:\n");
+            corpo.append(divisor).append("\n");
+            corpo.append("💬 SUGESTÃO DE RESPOSTA\n\n");
             corpo.append(briefing.sugestaoResposta()).append("\n\n");
         }
 
-        corpo.append("Nível de confiança: ");
-        corpo.append(briefing.nivelConfianca()).append("\n");
+        corpo.append(divisor).append("\n");
+
+        corpo.append("🎯 NÍVEL DE CONFIANÇA\n\n");
+        corpo.append(briefing.nivelConfianca()).append("\n\n");
+
+        corpo.append(divisor);
+        corpo.append("Fim do briefing.");
 
         String data = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
