@@ -169,6 +169,64 @@ public class DailyBriefingEmailService {
         return summaryService.gerarResumo(request);
     }
 
+    public void enviarBriefingInteligente() {
+        SummaryResponse briefing = gerarBriefingInteligente();
+
+        StringBuilder corpo = new StringBuilder();
+
+        corpo.append("DAILY BRIEFING INTELIGENTE\n");
+        corpo.append("==========================\n\n");
+
+        corpo.append("Resumo Executivo:\n");
+        corpo.append(briefing.resumo()).append("\n\n");
+
+        corpo.append("Prioridade: ");
+        corpo.append(briefing.prioridade()).append("\n\n");
+
+        corpo.append("Ações sugeridas:\n");
+        briefing.acoesSugeridas().forEach(acao ->
+                corpo.append("- ").append(acao).append("\n")
+        );
+        corpo.append("\n");
+
+        corpo.append("Pendências:\n");
+        briefing.pendencias().forEach(pendencia ->
+                corpo.append("- ").append(pendencia).append("\n")
+        );
+        corpo.append("\n");
+
+        corpo.append("Prazos:\n");
+        briefing.prazos().forEach(prazo ->
+                corpo.append("- ").append(prazo).append("\n")
+        );
+        corpo.append("\n");
+
+        corpo.append("Pessoas citadas:\n");
+        briefing.pessoasCitadas().forEach(pessoa ->
+                corpo.append("- ").append(pessoa).append("\n")
+        );
+        corpo.append("\n");
+
+        corpo.append("Necessita resposta: ");
+        corpo.append(briefing.necessitaResposta() ? "Sim" : "Não").append("\n\n");
+
+        if (briefing.sugestaoResposta() != null && !briefing.sugestaoResposta().isBlank()) {
+            corpo.append("Sugestão de resposta:\n");
+            corpo.append(briefing.sugestaoResposta()).append("\n\n");
+        }
+
+        corpo.append("Nível de confiança: ");
+        corpo.append(briefing.nivelConfianca()).append("\n");
+
+        String data = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+        emailSenderService.enviarResumo(
+                destination,
+                "Daily Briefing Inteligente - " + data,
+                corpo.toString()
+        );
+    }
+
     private int obterPesoRelevancia(EmailDetalheDTO email) {
         EmailClassificationResult classificacao = emailClassificationService.classificar(
                 email.getAssunto(),
