@@ -48,13 +48,27 @@ public class DailyBriefingService {
     }
 
     private String normalizarPrioridade(String prioridade) {
-        if (prioridade == null) {
-            return "";
+        if (prioridade == null || prioridade.isBlank()) {
+            return "media";
         }
 
-        return prioridade
+        String valor = prioridade
                 .trim()
                 .toLowerCase()
                 .replace("é", "e");
+
+        if (valor.contains("alta")) {
+            return "alta";
+        }
+
+        if (valor.contains("media")) {
+            return "media";
+        }
+
+        if (valor.contains("baixa")) {
+            return "baixa";
+        }
+
+        return "media";
     }
 }

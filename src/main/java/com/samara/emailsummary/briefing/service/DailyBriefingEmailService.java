@@ -1,18 +1,18 @@
 package com.samara.emailsummary.briefing.service;
 
+import com.samara.emailsummary.ai.dto.AnalysisType;
 import com.samara.emailsummary.ai.dto.SummaryRequest;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
 import com.samara.emailsummary.ai.service.SummaryService;
+import com.samara.emailsummary.briefing.context.DailyBriefingContextBuilder;
 import com.samara.emailsummary.briefing.dto.DailyBriefing;
 import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
 import com.samara.emailsummary.briefing.dto.EmailCategory;
 import com.samara.emailsummary.briefing.dto.EmailClassificationResult;
-import com.samara.emailsummary.briefing.context.DailyBriefingContextBuilder;
 import com.samara.emailsummary.dto.EmailDetalheDTO;
 import com.samara.emailsummary.dto.EmailResumoDTO;
 import com.samara.emailsummary.service.EmailSenderService;
 import com.samara.emailsummary.service.EmailService;
-import com.samara.emailsummary.ai.dto.AnalysisType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,10 +21,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class DailyBriefingEmailService {
@@ -64,14 +64,9 @@ public class DailyBriefingEmailService {
 
         List<EmailResumoDTO> emails = emailService.listarEmails();
 
-        List<DailyBriefingItem> itens = new ArrayList<>();
-
-        Set<String> threadsProcessadas = new HashSet<>();
-
-        int numero = 1;
+        Map<String, EmailDetalheDTO> emailsPorConversa = new LinkedHashMap<>();
 
         for (EmailResumoDTO emailResumo : emails) {
-
             try {
                 EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
@@ -79,63 +74,42 @@ public class DailyBriefingEmailService {
                     continue;
                 }
 
-                String chaveConversa = email.getThreadId() != null && !email.getThreadId().isBlank()
-                        ? email.getThreadId()
-                        : email.getAssunto();
+                String chaveConversa = obterChaveConversa(email);
 
-                if (!threadsProcessadas.add(chaveConversa)) {
-                    continue;
-                }
-
-                EmailClassificationResult classificacao =
-                        emailClassificationService.classificar(
-                                email.getAssunto(),
-                                email.getRemetente(),
-                                email.getCorpo()
-                        );
-
-                SummaryResponse resumo;
-
-                if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
-                    resumo = new SummaryResponse(
-                            "E-mail identificado como informativo/newsletter.",
-                            "Baixa",
-                            List.of(),
-                            List.of(),
-                            List.of(),
-                            List.of(),
-                            false,
-                            "",
-                            "Alta"
-                    );
-                } else {
-                    SummaryRequest request = new SummaryRequest(
-                            AnalysisType.EMAIL_SUMMARY,
-                            email.getAssunto(),
-                            email.getRemetente(),
-                            email.getCorpo()
-                    );
-
-                    resumo = summaryService.gerarResumo(request);
-                }
-
-                DailyBriefingItem item = new DailyBriefingItem(
-                        numero,
-                        email,
-                        resumo
-                );
-
-                itens.add(item);
-                numero++;
+                emailsPorConversa.putIfAbsent(chaveConversa, email);
 
             } catch (Exception e) {
-                log.warn("Falha ao processar um e-mail no Daily Briefing. O processamento continuará.", e);
+                log.warn("Falha ao buscar um e-mail no Daily Briefing. O processamento continuará.", e);
             }
+        }
+
+        List<DailyBriefingItem> itens = new ArrayList<>();
+
+        int numero = 1;
+
+        for (EmailDetalheDTO email : emailsPorConversa.values()) {
+
+            EmailClassificationResult classificacao = emailClassificationService.classificar(
+                    email.getAssunto(),
+                    email.getRemetente(),
+                    email.getCorpo()
+            );
+
+            SummaryResponse resumo = gerarResumoSeguro(email, classificacao);
+
+            DailyBriefingItem item = new DailyBriefingItem(
+                    numero,
+                    email,
+                    resumo
+            );
+
+            itens.add(item);
+            numero++;
         }
 
         DailyBriefing briefing = dailyBriefingService.criarBriefing(itens);
 
-        SummaryResponse briefingInteligente = gerarBriefingInteligente();
+        SummaryResponse briefingInteligente = gerarBriefingInteligenteSeguro();
 
         String corpo = dailyBriefingFormatterService.formatar(
                 briefing,
@@ -158,11 +132,9 @@ public class DailyBriefingEmailService {
         List<EmailDetalheDTO> emailsDetalhados = new ArrayList<>();
 
         for (EmailResumoDTO emailResumo : emails) {
-
             EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
-            if (email.getAssunto() != null &&
-                    email.getAssunto().startsWith("Resumo do e-mail:")) {
+            if (deveIgnorarEmail(email.getAssunto())) {
                 continue;
             }
 
@@ -186,7 +158,7 @@ public class DailyBriefingEmailService {
     }
 
     public void enviarBriefingInteligente() {
-        SummaryResponse briefing = gerarBriefingInteligente();
+        SummaryResponse briefing = gerarBriefingInteligenteSeguro();
 
         String divisor = "═══════════════════════════════\n";
 
@@ -284,6 +256,74 @@ public class DailyBriefingEmailService {
         );
     }
 
+    private SummaryResponse gerarResumoSeguro(
+            EmailDetalheDTO email,
+            EmailClassificationResult classificacao
+    ) {
+        try {
+            if (classificacao.categoria() == EmailCategory.NEWSLETTER) {
+                String prioridadeFallback = converterPrioridadeLocal(classificacao.categoria());
+
+                return new SummaryResponse(
+                        criarResumoSimplificado(email),
+                        prioridadeFallback,
+                        List.of(),
+                        List.of("Verificar este e-mail manualmente."),
+                        List.of(),
+                        List.of(),
+                        false,
+                        "",
+                        "Baixa"
+                );
+            }
+
+            SummaryRequest request = new SummaryRequest(
+                    AnalysisType.EMAIL_SUMMARY,
+                    email.getAssunto(),
+                    email.getRemetente(),
+                    email.getCorpo()
+            );
+
+            return summaryService.gerarResumo(request);
+
+        } catch (Exception e) {
+            log.warn("Falha ao gerar resumo com IA. O e-mail será incluído com resumo simplificado.", e);
+
+            return new SummaryResponse(
+                    criarResumoSimplificado(email),
+                    "Média",
+                    List.of(),
+                    List.of("Verificar este e-mail manualmente."),
+                    List.of(),
+                    List.of(),
+                    false,
+                    "",
+                    "Baixa"
+            );
+        }
+    }
+
+    private SummaryResponse gerarBriefingInteligenteSeguro() {
+        try {
+            return gerarBriefingInteligente();
+
+        } catch (Exception e) {
+            log.warn("Falha ao gerar o resumo geral do Daily Briefing. Será usado texto alternativo.", e);
+
+            return new SummaryResponse(
+                    "Não foi possível gerar o resumo geral com IA. Consulte os e-mails listados por prioridade abaixo.",
+                    "Média",
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    List.of(),
+                    false,
+                    "",
+                    "Baixa"
+            );
+        }
+    }
+
     private int obterPesoRelevancia(EmailDetalheDTO email) {
         EmailClassificationResult classificacao = emailClassificationService.classificar(
                 email.getAssunto(),
@@ -292,6 +332,18 @@ public class DailyBriefingEmailService {
         );
 
         return classificacao.categoria().getPeso();
+    }
+
+    private String obterChaveConversa(EmailDetalheDTO email) {
+        if (email.getThreadId() != null && !email.getThreadId().isBlank()) {
+            return email.getThreadId();
+        }
+
+        if (email.getAssunto() != null && !email.getAssunto().isBlank()) {
+            return email.getAssunto();
+        }
+
+        return email.getId();
     }
 
     private boolean deveIgnorarEmail(String assunto) {
@@ -306,4 +358,25 @@ public class DailyBriefingEmailService {
                 || assuntoNormalizado.startsWith("briefing da manhã");
     }
 
+    private String converterPrioridadeLocal(EmailCategory categoria) {
+        return switch (categoria) {
+            case CRITICAL, HIGH_PRIORITY -> "Alta";
+            case ACTION_REQUIRED -> "Média";
+            case INFORMATIONAL, NEWSLETTER -> "Baixa";
+        };
+    }
+
+    private String criarResumoSimplificado(EmailDetalheDTO email) {
+        if (email.getCorpo() == null || email.getCorpo().isBlank()) {
+            return "Não foi possível gerar o resumo com IA. Verifique o e-mail manualmente.";
+        }
+
+        String corpo = email.getCorpo().trim();
+
+        if (corpo.length() <= 400) {
+            return corpo;
+        }
+
+        return corpo.substring(0, 400) + "...";
+    }
 }
