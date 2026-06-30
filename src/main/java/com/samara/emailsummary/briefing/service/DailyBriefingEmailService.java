@@ -23,6 +23,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class DailyBriefingEmailService {
@@ -64,6 +66,8 @@ public class DailyBriefingEmailService {
 
         List<DailyBriefingItem> itens = new ArrayList<>();
 
+        Set<String> threadsProcessadas = new HashSet<>();
+
         int numero = 1;
 
         for (EmailResumoDTO emailResumo : emails) {
@@ -72,6 +76,14 @@ public class DailyBriefingEmailService {
                 EmailDetalheDTO email = emailService.buscarEmailPorId(emailResumo.getId());
 
                 if (deveIgnorarEmail(email.getAssunto())) {
+                    continue;
+                }
+
+                String chaveConversa = email.getThreadId() != null && !email.getThreadId().isBlank()
+                        ? email.getThreadId()
+                        : email.getAssunto();
+
+                if (!threadsProcessadas.add(chaveConversa)) {
                     continue;
                 }
 
