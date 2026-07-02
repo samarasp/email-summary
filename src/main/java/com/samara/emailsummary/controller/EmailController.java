@@ -86,9 +86,4 @@ public class EmailController {
                     .body("Não foi possível gerar o resumo porque o serviço de IA está temporariamente indisponível.");
         }
     }
-
-    @GetMapping("/briefing")
-    public SummaryResponse gerarBriefingDiario() {
-        return dailyBriefingEmailService.gerarBriefingInteligente();
-    }
 }

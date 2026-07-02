@@ -1,12 +1,11 @@
 package com.samara.emailsummary.briefing.service;
 
-import com.samara.emailsummary.ai.dto.SummaryResponse;
+import com.samara.emailsummary.briefing.dto.BriefingClassification;
 import com.samara.emailsummary.briefing.dto.DailyBriefing;
 import com.samara.emailsummary.briefing.dto.DailyBriefingItem;
 import org.springframework.stereotype.Service;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -18,10 +17,7 @@ public class DailyBriefingFormatterService {
     private static final DateTimeFormatter HORA_FORMATTER =
             DateTimeFormatter.ofPattern("HH:mm");
 
-    public String formatar(
-            DailyBriefing briefing,
-            String resumoGeral
-    ) {
+    public String formatar(DailyBriefing briefing) {
         StringBuilder texto = new StringBuilder();
 
         texto.append("═══════════════════════════════\n");
@@ -33,44 +29,58 @@ public class DailyBriefingFormatterService {
         texto.append("═══════════════════════════════\n\n");
 
         texto.append("📊 RESUMO GERAL\n\n");
-
-        if (resumoGeral != null && !resumoGeral.isBlank()) {
-            texto.append(resumoGeral).append("\n\n");
-        } else {
-            texto.append("Resumo geral não informado.\n\n");
-        }
+        texto.append("Foram identificados ")
+                .append(briefing.totalEmails())
+                .append(" e-mails relevantes para análise nesta execução.\n\n");
 
         texto.append("📈 NÚMEROS DO DIA\n\n");
-        texto.append("• E-mails recebidos: ").append(briefing.totalEmails()).append("\n");
-        texto.append("• Alta prioridade: ").append(briefing.altaPrioridade()).append("\n");
-        texto.append("• Média prioridade: ").append(briefing.mediaPrioridade()).append("\n");
-        texto.append("• Baixa prioridade: ").append(briefing.baixaPrioridade()).append("\n");
-        texto.append("• Necessitam resposta: ").append(briefing.necessitamResposta()).append("\n");
-        texto.append("• Com anexos: ").append(briefing.comAnexos()).append("\n\n");
+        texto.append("• E-mails relevantes: ").append(briefing.totalEmails()).append("\n");
+        texto.append("• Exigem ação: ").append(briefing.exigeAcao()).append("\n");
+        texto.append("• Apenas acompanhar: ").append(briefing.acompanhar()).append("\n");
+        texto.append("• Somente informação: ").append(briefing.informativos()).append("\n\n");
 
         texto.append("═══════════════════════════════\n\n");
 
-        texto.append("📌 E-MAILS POR PRIORIDADE\n\n");
+        texto.append("📌 E-MAILS RELEVANTES\n\n");
 
-        adicionarSecaoPrioridade(texto, "🔥 ALTA PRIORIDADE", briefing.itens(), "Alta");
-        adicionarSecaoPrioridade(texto, "⚠️ MÉDIA PRIORIDADE", briefing.itens(), "Média");
-        adicionarSecaoPrioridade(texto, "📎 BAIXA PRIORIDADE", briefing.itens(), "Baixa");
+        adicionarSecao(
+                texto,
+                "🔴 EXIGE AÇÃO",
+                briefing.itens(),
+                BriefingClassification.EXIGE_ACAO
+        );
+
+        adicionarSecao(
+                texto,
+                "🟡 APENAS ACOMPANHAR",
+                briefing.itens(),
+                BriefingClassification.ACOMPANHAR
+        );
+
+        adicionarSecao(
+                texto,
+                "🔵 SOMENTE INFORMAÇÃO",
+                briefing.itens(),
+                BriefingClassification.INFORMATIVO
+        );
+
+        if (briefing.itens().isEmpty()) {
+            texto.append("Nenhum e-mail relevante foi identificado nesta execução.\n\n");
+        }
 
         texto.append("Fim do briefing.\n");
 
         return texto.toString();
     }
 
-    private void adicionarSecaoPrioridade(
+    private void adicionarSecao(
             StringBuilder texto,
             String titulo,
             List<DailyBriefingItem> itens,
-            String prioridade
+            BriefingClassification classificacao
     ) {
         List<DailyBriefingItem> filtrados = itens.stream()
-                .filter(item -> normalizarPrioridade(item.resumo().prioridade())
-                        .equals(normalizarPrioridade(prioridade)))
-                .sorted(Comparator.comparing(DailyBriefingItem::numero))
+                .filter(item -> item.classificacao() == classificacao)
                 .toList();
 
         if (filtrados.isEmpty()) {
@@ -90,52 +100,21 @@ public class DailyBriefingFormatterService {
     }
 
     private void adicionarItem(StringBuilder texto, DailyBriefingItem item) {
-
-        SummaryResponse resumo = item.resumo();
-
         texto.append("[").append(formatarNumero(item.numero())).append("]\n\n");
 
         texto.append("Remetente:\n");
-        texto.append(item.email().getRemetente()).append("\n\n");
+        texto.append(valorOuPadrao(item.remetente())).append("\n\n");
 
         texto.append("Assunto:\n");
-        texto.append(item.email().getAssunto()).append("\n\n");
+        texto.append(valorOuPadrao(item.assunto())).append("\n\n");
 
         texto.append("Resumo:\n");
-        texto.append(valorOuPadrao(resumo.resumo())).append("\n\n");
+        texto.append(valorOuPadrao(item.resumo())).append("\n\n");
 
-        adicionarLista(texto, "Pendências", resumo.pendencias());
-        adicionarLista(texto, "Ações sugeridas", resumo.acoesSugeridas());
-        adicionarLista(texto, "Prazos", resumo.prazos());
-        adicionarLista(texto, "Pessoas citadas", resumo.pessoasCitadas());
-
-        texto.append("Necessita resposta:\n");
-        texto.append(resumo.necessitaResposta() ? "SIM" : "Não").append("\n\n");
-
-        if (resumo.necessitaResposta()) {
-            texto.append("Sugestão de resposta:\n");
-            texto.append(valorOuPadrao(resumo.sugestaoResposta())).append("\n\n");
-        }
-
-        texto.append("Nível de confiança:\n");
-        texto.append(valorOuPadrao(resumo.nivelConfianca())).append("\n\n");
+        texto.append("Próximas ações:\n");
+        texto.append(valorOuPadrao(item.proximasAcoes())).append("\n\n");
 
         texto.append("───────────────────────────────\n\n");
-    }
-
-    private void adicionarLista(StringBuilder texto, String titulo, List<String> itens) {
-
-        if (itens == null || itens.isEmpty()) {
-            return;
-        }
-
-        texto.append(titulo).append(":\n");
-
-        for (String item : itens) {
-            texto.append("• ").append(item).append("\n");
-        }
-
-        texto.append("\n");
     }
 
     private String formatarNumero(int numero) {
@@ -148,30 +127,5 @@ public class DailyBriefingFormatterService {
         }
 
         return valor;
-    }
-
-    private String normalizarPrioridade(String prioridade) {
-        if (prioridade == null || prioridade.isBlank()) {
-            return "media";
-        }
-
-        String valor = prioridade
-                .trim()
-                .toLowerCase()
-                .replace("é", "e");
-
-        if (valor.contains("alta")) {
-            return "alta";
-        }
-
-        if (valor.contains("media")) {
-            return "media";
-        }
-
-        if (valor.contains("baixa")) {
-            return "baixa";
-        }
-
-        return "media";
     }
 }
