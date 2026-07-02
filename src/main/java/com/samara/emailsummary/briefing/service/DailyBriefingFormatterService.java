@@ -28,11 +28,6 @@ public class DailyBriefingFormatterService {
                 .append("\n");
         texto.append("═══════════════════════════════\n\n");
 
-        texto.append("📊 RESUMO GERAL\n\n");
-        texto.append("Foram identificados ")
-                .append(briefing.totalEmails())
-                .append(" e-mails relevantes para análise nesta execução.\n\n");
-
         texto.append("📈 NÚMEROS DO DIA\n\n");
         texto.append("• E-mails relevantes: ").append(briefing.totalEmails()).append("\n");
         texto.append("• Exigem ação: ").append(briefing.exigeAcao()).append("\n");

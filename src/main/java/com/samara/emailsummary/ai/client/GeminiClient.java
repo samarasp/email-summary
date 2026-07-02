@@ -50,7 +50,7 @@ public class GeminiClient {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(aiProperties.getGeminiApiUrl()))
-                .timeout(Duration.ofSeconds(30))
+                .timeout(Duration.ofSeconds(120))
                 .header("Content-Type", "application/json")
                 .header("x-goog-api-key", aiProperties.getGeminiApiKey())
                 .POST(HttpRequest.BodyPublishers.ofString(json))
