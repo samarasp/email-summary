@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import com.samara.emailsummary.ai.exception.AiCommunicationException;
+import com.samara.emailsummary.briefing.dto.BriefingAnalysis;
 
 import java.io.IOException;
 import java.util.List;
@@ -70,5 +71,33 @@ public class GeminiProvider implements AiProvider {
                 "",
                 "Baixa"
         );
+    }
+
+    public BriefingAnalysis gerarAnalise(String prompt) {
+
+        try {
+            log.info("Iniciando geração do briefing inteligente com Gemini.");
+
+            String respostaBruta = geminiClient.gerarConteudo(prompt);
+
+            BriefingAnalysis briefing = responseParser.parseBriefing(respostaBruta);
+
+            log.info("Briefing inteligente gerado com sucesso pelo Gemini.");
+
+            return briefing;
+
+        } catch (JsonProcessingException e) {
+            log.error("Falha ao interpretar a resposta do Gemini.", e);
+            throw new AiCommunicationException("Erro ao interpretar resposta da IA.", e);
+
+        } catch (IOException e) {
+            log.error("Erro de comunicação com o Gemini.", e);
+            throw new AiCommunicationException("Erro de comunicação com a IA.", e);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Comunicação com o Gemini interrompida.", e);
+            throw new AiCommunicationException("Comunicação com a IA interrompida.", e);
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.samara.emailsummary.ai.parser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samara.emailsummary.ai.dto.SummaryResponse;
+import com.samara.emailsummary.briefing.dto.BriefingAnalysis;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -33,4 +34,15 @@ public class GeminiResponseParser {
                 .replace("```", "")
                 .trim();
     }
+
+    public BriefingAnalysis parseBriefing(String respostaBruta) throws JsonProcessingException {
+
+        String respostaLimpa = limparJson(respostaBruta);
+
+        return objectMapper.readValue(
+                respostaLimpa,
+                BriefingAnalysis.class
+        );
+    }
+
 }

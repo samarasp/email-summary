@@ -1,8 +1,8 @@
 package com.samara.emailsummary.briefing.dto;
 
-public record DailyBriefingItem(
+public record BriefingEmailItem(
 
-        int numero,
+        String id,
 
         BriefingClassification classificacao,
 

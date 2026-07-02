@@ -12,15 +12,11 @@ public record DailyBriefing(
 
         int totalEmails,
 
-        int altaPrioridade,
+        int exigeAcao,
 
-        int mediaPrioridade,
+        int acompanhar,
 
-        int baixaPrioridade,
-
-        int necessitamResposta,
-
-        int comAnexos,
+        int informativos,
 
         List<DailyBriefingItem> itens
 
