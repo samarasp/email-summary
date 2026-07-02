@@ -9,7 +9,6 @@ import com.samara.emailsummary.service.EmailSenderService;
 import com.samara.emailsummary.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -25,30 +24,24 @@ public class DailyBriefingEmailService {
     private static final Logger log =
             LoggerFactory.getLogger(DailyBriefingEmailService.class);
 
-    private final EmailService emailService;
     private final DailyBriefingFormatterService dailyBriefingFormatterService;
     private final EmailSenderService emailSenderService;
     private final BriefingAnalysisService briefingAnalysisService;
     private final BriefingMapper briefingMapper;
 
-    @Value("${email.summary.destination}")
-    private String destination;
-
     public DailyBriefingEmailService(
-            EmailService emailService,
             DailyBriefingFormatterService dailyBriefingFormatterService,
             EmailSenderService emailSenderService,
             BriefingAnalysisService briefingAnalysisService,
             BriefingMapper briefingMapper
     ) {
-        this.emailService = emailService;
         this.dailyBriefingFormatterService = dailyBriefingFormatterService;
         this.emailSenderService = emailSenderService;
         this.briefingAnalysisService = briefingAnalysisService;
         this.briefingMapper = briefingMapper;
     }
 
-    public void enviarBriefingDiario() {
+    public void enviarBriefingDiario(EmailService emailService, String destination) {
 
         List<EmailResumoDTO> emails = emailService.listarEmails();
 

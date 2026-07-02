@@ -1,25 +1,22 @@
 package com.samara.emailsummary.security.oauth;
 
 import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.json.gson.GsonFactory;
-import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.util.store.FileDataStoreFactory;
-import com.google.api.services.gmail.GmailScopes;
-
-import java.util.List;
-
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.gmail.GmailScopes;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
 
 @Service
 public class GoogleAuthorizationService {
@@ -61,7 +58,11 @@ public class GoogleAuthorizationService {
     }
 
     private GoogleAuthorizationCodeFlow createAuthorizationFlow(
-            GoogleClientSecrets clientSecrets) throws Exception {
+            GoogleClientSecrets clientSecrets,
+            String mailboxId
+    ) throws Exception {
+
+        File tokensDirectory = new File(TOKENS_DIRECTORY_PATH, mailboxId);
 
         return new GoogleAuthorizationCodeFlow.Builder(
                 GoogleNetHttpTransport.newTrustedTransport(),
@@ -72,28 +73,35 @@ public class GoogleAuthorizationService {
                         GmailScopes.GMAIL_SEND
                 )
         )
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+                .setDataStoreFactory(new FileDataStoreFactory(tokensDirectory))
                 .setAccessType("offline")
                 .build();
     }
 
     private Credential authorizeUser(
-            GoogleAuthorizationCodeFlow flow) throws Exception {
+            GoogleAuthorizationCodeFlow flow,
+            String mailboxId
+    ) throws Exception {
 
         LocalServerReceiver receiver = new LocalServerReceiver.Builder()
                 .setPort(8888)
                 .build();
 
         return new AuthorizationCodeInstalledApp(flow, receiver)
-                .authorize("user");
+                .authorize(mailboxId);
     }
 
     public Credential authorize() throws Exception {
+        return authorize("default");
+    }
+
+    public Credential authorize(String mailboxId) throws Exception {
 
         GoogleClientSecrets clientSecrets = loadClientSecrets();
 
-        GoogleAuthorizationCodeFlow flow = createAuthorizationFlow(clientSecrets);
+        GoogleAuthorizationCodeFlow flow =
+                createAuthorizationFlow(clientSecrets, mailboxId);
 
-        return authorizeUser(flow);
+        return authorizeUser(flow, mailboxId);
     }
 }

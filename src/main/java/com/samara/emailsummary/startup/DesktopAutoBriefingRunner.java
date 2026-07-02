@@ -1,6 +1,6 @@
 package com.samara.emailsummary.startup;
 
-import com.samara.emailsummary.briefing.service.DailyBriefingEmailService;
+import com.samara.emailsummary.briefing.service.MultiMailboxBriefingService;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
@@ -10,22 +10,30 @@ import org.springframework.stereotype.Component;
 @Component
 public class DesktopAutoBriefingRunner implements ApplicationRunner {
 
-    private final DailyBriefingEmailService dailyBriefingEmailService;
+    private final MultiMailboxBriefingService multiMailboxBriefingService;
     private final ApplicationContext applicationContext;
 
     public DesktopAutoBriefingRunner(
-            DailyBriefingEmailService dailyBriefingEmailService,
+            MultiMailboxBriefingService multiMailboxBriefingService,
             ApplicationContext applicationContext
     ) {
-        this.dailyBriefingEmailService = dailyBriefingEmailService;
+        this.multiMailboxBriefingService = multiMailboxBriefingService;
         this.applicationContext = applicationContext;
     }
 
     @Override
     public void run(ApplicationArguments args) {
+        System.out.println(">>> DesktopAutoBriefingRunner iniciado");
         if (!args.containsOption("desktop-auto-briefing")) {
             return;
         }
+
+        if (!args.containsOption("desktop-auto-briefing")) {
+            System.out.println(">>> Argumento desktop-auto-briefing NÃO encontrado");
+            return;
+        }
+
+        System.out.println(">>> Argumento desktop-auto-briefing encontrado");
 
         try {
             System.out.println();
@@ -35,11 +43,11 @@ public class DesktopAutoBriefingRunner implements ApplicationRunner {
             System.out.println("========================================");
             System.out.println();
 
-            dailyBriefingEmailService.enviarBriefingDiario();
+            multiMailboxBriefingService.enviarBriefings();
 
             System.out.println();
             System.out.println("========================================");
-            System.out.println("Resumo enviado com sucesso.");
+            System.out.println("Resumo(s) enviado(s) com sucesso.");
             System.out.println("Encerrando aplicacao...");
             System.out.println("========================================");
             System.out.println();
@@ -50,7 +58,7 @@ public class DesktopAutoBriefingRunner implements ApplicationRunner {
         } catch (Exception e) {
             System.err.println();
             System.err.println("========================================");
-            System.err.println("Nao foi possivel enviar o resumo.");
+            System.err.println("Nao foi possivel enviar o(s) resumo(s).");
             System.err.println("Motivo: " + e.getMessage());
             System.err.println("========================================");
             e.printStackTrace();
